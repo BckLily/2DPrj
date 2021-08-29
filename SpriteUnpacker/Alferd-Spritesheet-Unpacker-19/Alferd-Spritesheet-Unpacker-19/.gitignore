@@ -1,0 +1,7 @@
+*.svn-base
+bin/
+obj/
+.svn/
+*.user
+*.suo
+/.vs
