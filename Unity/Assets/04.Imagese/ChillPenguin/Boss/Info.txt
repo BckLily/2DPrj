@@ -1,0 +1,22 @@
+등장 순서
+Appear0, 1, 2, 3, 1, 2, 3, Ready0, 1, 2
+대기
+Idle 0, 1
+돌진 순서
+Ready0, 1 Dash 0, 1
+눈 발사
+Ready0, 1
+피해
+Damage0
+Damage1 >> 불 피해
+원거리 공격 모션
+Fire0 1
+원거리 공격
+Range0 1 2 3 4 5
+투사체
+Snow 0 1
+눈사람??
+SnowMan0 1 2
+점프
+Jump0 1 Appear0 1 2 3
+
