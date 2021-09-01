@@ -2,9 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using InterfaceSet;
+
 
 //[RequireComponent(typeof(SpriteRenderer))]
-public class ChillPenguinAI : MonoBehaviour
+public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
 {
     [Header("Component")]
     public Rigidbody2D rb2d;
@@ -36,9 +38,9 @@ public class ChillPenguinAI : MonoBehaviour
     SpriteTileMode tileMode;
     int sortLayer;
 
-    private float gravity = -0.085f;
-    [SerializeField]
-    private int gravityCount = 0;
+    //private float gravity = -0.085f;
+    //[SerializeField]
+    //private int gravityCount = 0;
     bool isGround;
 
 
@@ -46,7 +48,7 @@ public class ChillPenguinAI : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        IsGround();
+        //IsGround();
         sprite = spriteRenderer.sprite;
         StartCoroutine(CoStartAnim());
         //StartCoroutine(CoComponentReset());
@@ -57,20 +59,21 @@ public class ChillPenguinAI : MonoBehaviour
 
     }
 
+    // isTrigger일 때 사용했던 함수.
+    // 발 아래 쪽으로 Raycast를 하여 Floor와 접촉한 상태인지 확인하는 함수.
+    //void IsGround()
+    //{
+    //    //Physics2D.Raycast(transform.)
+    //    if (Physics2D.Raycast(polyCollider2D.bounds.center, -transform.up, (polyCollider2D.bounds.size.y / 2) + 0.005f, 1 << LayerMask.NameToLayer("FLOOR")))
+    //    {
+    //        isGround = true;
+    //    }
+    //    else
+    //    {
+    //        isGround = false;
+    //    }
 
-    void IsGround()
-    {
-        //Physics2D.Raycast(transform.)
-        if (Physics2D.Raycast(polyCollider2D.bounds.center, -transform.up, (polyCollider2D.bounds.size.y / 2) + 0.005f, 1 << LayerMask.NameToLayer("FLOOR")))
-        {
-            isGround = true;
-        }
-        else
-        {
-            isGround = false;
-        }
-
-    }
+    //}
 
 
 
@@ -83,8 +86,9 @@ public class ChillPenguinAI : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        IsGround();
-        GetGravity();
+        //IsGround();
+        // Trigger 였을 때 중력 만들 때 사용한 것.
+        //GetGravity();
 
         //if(gameObject.compon)
         if (settingCount >= 50)
@@ -105,20 +109,20 @@ public class ChillPenguinAI : MonoBehaviour
 
     }
 
-    private void GetGravity()
-    {
-        if (!isGround)
-        {
-            //gravityCount++;
-            //rb2d.AddForce(new Vector2(0, gravity * Time.deltaTime));
-            transform.Translate(0, ++gravityCount * gravity * Time.deltaTime, 0);
-        }
-        else
-        {
-            //rb2d.AddForce(new Vector2(0, gravity * Time.deltaTime * gravityCount));
-            gravityCount = 0;
-        }
-    }
+    //private void GetGravity()
+    //{
+    //    if (!isGround)
+    //    {
+    //        //gravityCount++;
+    //        //rb2d.AddForce(new Vector2(0, gravity * Time.deltaTime));
+    //        transform.Translate(0, ++gravityCount * gravity * Time.deltaTime, 0);
+    //    }
+    //    else
+    //    {
+    //        //rb2d.AddForce(new Vector2(0, gravity * Time.deltaTime * gravityCount));
+    //        gravityCount = 0;
+    //    }
+    //}
 
     IEnumerator CoComponentReset()
     {
@@ -214,16 +218,15 @@ public class ChillPenguinAI : MonoBehaviour
         }
     }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        //// Player의 공격에 맞으면
-        //if (collision.contacts)
-        //{
+    //private void OnTriggerEnter2D(Collider2D collision)
+    //{
+    //    // Player의 공격에 맞으면
+    //    if (collision.CompareTag("BULLET"))
+    //    {
+    //        Damaged();
+    //    }
+    //}
 
-        //    Debug.Log(polyCollider2D.bounds.center);
-        //    Debug.Log(collision.bounds.ClosestPoint(transform.position));
-        //}
-    }
 
 
 
@@ -281,4 +284,13 @@ public class ChillPenguinAI : MonoBehaviour
         }
     }
 
+    public void Attack()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void Damaged(float damage, Vector3 hitPoint, Vector3 hitNormal)
+    {
+        throw new System.NotImplementedException();
+    }
 }

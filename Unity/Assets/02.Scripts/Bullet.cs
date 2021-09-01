@@ -18,7 +18,7 @@ public class Bullet : MonoBehaviour
 
     private void OnTriggerStay2D(Collider2D collision)
     {
-        Debug.Log("1984yt9ap8dghfiuadfoi");
+        
     }
 
 
