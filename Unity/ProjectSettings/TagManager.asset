@@ -6,6 +6,8 @@ TagManager:
   tags:
   - FLOOR
   - WALL
+  - PLAYER
+  - BULLET
   layers:
   - Default
   - TransparentFX
@@ -14,9 +16,9 @@ TagManager:
   - Water
   - UI
   - 
+  - PLAYER
   - 
-  - 
-  - 
+  - BULLET
   - WALL
   - FLOOR
   - 
