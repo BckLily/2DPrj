@@ -13,15 +13,21 @@ public class megaman : MonoBehaviour
     bool isJump = false;
     bool isGround = true;
     bool isDash = false;
+    bool isSpawn = true;
+    bool isWall = false;
     private void Awake()
     {
         rigid = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         anim = GetComponent<Animator>();
     }
+    void Start()
+    {
+        anim.SetBool("IsSpawn", isSpawn);
+    }
     void Update()
     {
-        //ÇÃ·¹ÀÌ¾î Á¡ÇÁ
+        //í”Œë ˆì´ì–´ ì í”„
         if (Input.GetButtonDown("Jump") && isGround)
         {
             isJump = !isJump;
@@ -29,16 +35,16 @@ public class megaman : MonoBehaviour
             rigid.AddForce(Vector2.up * jumpforce, ForceMode2D.Impulse);
             anim.SetBool("IsJump", !isGround);
         }
-        //ÇÃ·¹ÀÌ¾î ÀÌµ¿ °¨¼Ó
+        //í”Œë ˆì´ì–´ ì´ë™ ê°ì†
         if (Input.GetButtonUp("Horizontal"))
         {
             rigid.velocity = new Vector2(rigid.velocity.normalized.x * 0.5f, rigid.velocity.y);
         }
 
-        //ÇÃ·¹ÀÌ¾î ÀÌµ¿
+        //í”Œë ˆì´ì–´ ì´ë™
         float movedir = Input.GetAxisRaw("Horizontal");
 
-        if (Mathf.Abs(movedir) >= 0.01f)  // Àı´ë°ªÀ¸·Î movedir °ªÀ» ¹Ş´Â´Ù
+        if (Mathf.Abs(movedir) >= 0.01f)  // ì ˆëŒ€ê°’ìœ¼ë¡œ movedir ê°’ì„ ë°›ëŠ”ë‹¤
         {
             isRun = true;
             anim.SetBool("IsRun", isRun);
@@ -48,35 +54,40 @@ public class megaman : MonoBehaviour
             isRun = false;
             anim.SetBool("IsRun", isRun);
         }
-        rigid.velocity = new Vector2(maxspeed * movedir, rigid.velocity.y);  // movedir °ª¿¡ µû¸¥ ÇÃ·¹ÀÌ¾î ÀÌµ¿¼Óµµ
+        rigid.velocity = new Vector2(maxspeed * movedir, rigid.velocity.y);  // movedir ê°’ì— ë”°ë¥¸ í”Œë ˆì´ì–´ ì´ë™ì†ë„
 
-        // ÇÃ·¹ÀÌ¾î ´ë½¬
-        if (Input.GetKeyDown(KeyCode.LeftShift) && !isDash && isGround) // LeftShift ´©¸£°í isDash°¡ true ÀÌ°í ¶¥¿¡ ´ê¾Æ ÀÖÀ»¶§ 
-        {                                                               // isGround¸¦ ¾²´Â ÀÌÀ¯ = Á¡ÇÁÁß¿¡ ´ë½¬°¡ µÇÁö ¾Êµµ·Ï ÇÏ±â À§ÇÔ
+        // í”Œë ˆì´ì–´ ëŒ€ì‰¬
+        if (Input.GetKeyDown(KeyCode.LeftShift) && !isDash && isGround) // LeftShift ëˆ„ë¥´ê³  isDashê°€ true ì´ê³  ë•…ì— ë‹¿ì•„ ìˆì„ë•Œ 
+        {                                                               // isGroundë¥¼ ì“°ëŠ” ì´ìœ  = ì í”„ì¤‘ì— ëŒ€ì‰¬ê°€ ë˜ì§€ ì•Šë„ë¡ í•˜ê¸° ìœ„í•¨
             anim.SetTrigger("IsDash");
-            StartCoroutine(CoDash());  // ¹«ÇÑ ´ë½¬ ¹æÁö ÄÚ·çÆ¾ ½ÇÇà
+            StartCoroutine(CoDash());  // ë¬´í•œ ëŒ€ì‰¬ ë°©ì§€ ì½”ë£¨í‹´ ì‹¤í–‰
             rigid.velocity = new Vector2(maxspeed * movedir, rigid.velocity.y);
         }
 
-        if (movedir == 1) // ¿À¸¥ÂÊ MaxSpeed
+        if (movedir == 1) // ì˜¤ë¥¸ìª½ MaxSpeed
         {
-            //¿ŞÂÊ ¿À¸¥ÂÊ ¹æÇâ ÀüÈ¯
+            //ì™¼ìª½ ì˜¤ë¥¸ìª½ ë°©í–¥ ì „í™˜
             spriteRenderer.flipX = false;
         }
-        else if (movedir == -1) // ¿ŞÂÊ MaxSpeed
+        else if (movedir == -1) // ì™¼ìª½ MaxSpeed
         {
-            //¿ŞÂÊ ¿À¸¥ÂÊ ¹æÇâ ÀüÈ¯
+            //ì™¼ìª½ ì˜¤ë¥¸ìª½ ë°©í–¥ ì „í™˜
             spriteRenderer.flipX = true;
         }
 
-            /*rigid.velocity = new Vector2(maxspeed * (-1), rigid.velocity.y);
-            if (Input.GetKey(KeyCode.LeftShift))
-            {
-                anim.SetTrigger("IsDash");
-                rigid.velocity = new Vector2(maxspeed * (-2), rigid.velocity.y);
-            }
-            else
-                anim.SetTrigger("IsDash");*/
+        /*rigid.velocity = new Vector2(maxspeed * (-1), rigid.velocity.y);
+        if (Input.GetKey(KeyCode.LeftShift))
+        {
+            anim.SetTrigger("IsDash");
+            rigid.velocity = new Vector2(maxspeed * (-2), rigid.velocity.y);
+        }
+        else
+            anim.SetTrigger("IsDash");*/
+
+        // í”Œë ˆì´ì–´ ë²½ì í”„
+
+        WallJumping(movedir);
+
 
 
     }
@@ -84,27 +95,74 @@ public class megaman : MonoBehaviour
     {
 
     }
-    private void OnCollisionEnter2D(Collision2D collision)  // ¹«ÇÑ Á¡ÇÁ¸¦ ¹æÁöÇÏ±âÀ§ÇÑ Äİ¶óÀÌ´õ Ãæµ¹ ÇÔ¼ö
-    {                                                       // ÇöÀç ¶¥°ú º®ÀÇ ±¸ºĞÀÌ ¾øÀ½
+    private void OnCollisionEnter2D(Collision2D collision)  // ë¬´í•œ ì í”„ë¥¼ ë°©ì§€í•˜ê¸°ìœ„í•œ ì½œë¼ì´ë” ì¶©ëŒ í•¨ìˆ˜
+    {                                                       // í˜„ì¬ ë•…ê³¼ ë²½ì˜ êµ¬ë¶„ì´ ì—†ìŒ
         if (!isGround)
         {
             isGround = !isGround;
             isJump = !isJump;
             anim.SetBool("IsJump", false);
         }
-        
+
     }
-    IEnumerator CoDash()  // ¹«ÇÑ ´ë½¬ ¹æÁö ÇÏ±â À§ÇÑ ÄÚ·çÆ¾ÇÔ¼ö
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        isGround = false;
+    }
+
+
+    IEnumerator CoDash()  // ë¬´í•œ ëŒ€ì‰¬ ë°©ì§€ í•˜ê¸° ìœ„í•œ ì½”ë£¨í‹´í•¨ìˆ˜
     {
         while (true)
         {
             isDash = true;
-            maxspeed *= 2f; // ´ë½¬ ¼Óµµ = ÀÏ¹İ ¼Óµµ 2¹è
+            maxspeed *= 1.5f; // ëŒ€ì‰¬ ì†ë„ = ì¼ë°˜ ì†ë„ 2ë°°
 
             yield return new WaitForSeconds(0.5f);
             isDash = false;
-            maxspeed /= 2f; // ÀÌµ¿ ¼Óµµ ¿ø»ó º¹±Í
+            maxspeed /= 1.5f; // ì´ë™ ì†ë„ ì›ìƒ ë³µê·€
             yield break;
         }
+    }
+
+    void WallJumping(float moveDir)
+    {
+        //Physics2D.OverlapCircle(Vector2., 0.1f, 8);
+        //Debug.Log(coll2D.bounds.size);
+        CapsuleCollider2D coll2D = GetComponent<CapsuleCollider2D>();
+        RaycastHit2D hit = Physics2D.Raycast(coll2D.bounds.center, new Vector2(moveDir, 0), Mathf.Abs(moveDir * ((coll2D.bounds.size.x / 2) + 0.05f)), 1 << LayerMask.NameToLayer("WALL"));
+        //
+        if (hit && !isGround)
+        {
+            //Debug.Log("aosdfha;sdfkjk;zljcxv");
+            isWall = !isWall;
+            isJump = false;
+            anim.SetBool("IsWall", isGround);
+            isGround = !isGround;
+            if (Input.GetButtonDown("Jump"))
+            {
+                isJump = !isJump;
+                rigid.AddForce(Vector2.up * 4, ForceMode2D.Impulse);
+                anim.SetBool("IsJump", isGround);
+            }
+        }
+
+        //Debug.Log("size: " + coll2D.bounds.size);
+        //Debug.Log("DIR: " + new Vector2(moveDir, 0));
+        //Debug.Log("DIS: " + moveDir * ((coll2D.bounds.size.x / 2) + 0.05f));
+        //Debug.Log("Layer: " + LayerMask.NameToLayer("WALL"));
+
+        //if (hit.collider != null)
+        //{
+        //    Debug.Log(hit.collider.gameObject);
+        //    Debug.Log("hit: " + hit.collider.name);
+        //}
+        //if (hit.collider == null)
+        //{
+        //    Debug.Log("12341234");
+        //}
+
+        //Debug.DrawRay(coll2D.bounds.center, new Vector2(moveDir * ((coll2D.bounds.size.x / 2) + 0.05f), 0), Color.red);
     }
 }
