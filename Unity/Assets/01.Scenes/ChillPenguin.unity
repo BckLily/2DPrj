@@ -22878,6 +22878,14 @@ PrefabInstance:
       propertyPath: m_Simulated
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2100725270057653411, guid: 55a5985138d6ae84496aa7b1c1fef6de, type: 3}
+      propertyPath: m_Constraints
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 2100725270057653411, guid: 55a5985138d6ae84496aa7b1c1fef6de, type: 3}
+      propertyPath: m_GravityScale
+      value: 1.5
+      objectReference: {fileID: 0}
     - target: {fileID: 2100725270057653414, guid: 55a5985138d6ae84496aa7b1c1fef6de, type: 3}
       propertyPath: m_FlipX
       value: 0
@@ -23050,14 +23058,6 @@ PrefabInstance:
     - target: {fileID: 6316544883609730857, guid: 112d341139ec54d4a8f6f70701952001, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6316544883609730859, guid: 112d341139ec54d4a8f6f70701952001, type: 3}
-      propertyPath: m_GravityScale
-      value: 1.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 6316544883609731028, guid: 112d341139ec54d4a8f6f70701952001, type: 3}
-      propertyPath: jumpforce
-      value: 8.75
       objectReference: {fileID: 0}
     - target: {fileID: 6316544883609731031, guid: 112d341139ec54d4a8f6f70701952001, type: 3}
       propertyPath: m_Name

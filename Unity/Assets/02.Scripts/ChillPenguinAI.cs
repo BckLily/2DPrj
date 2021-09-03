@@ -21,6 +21,13 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     private SpriteRenderer spriteRenderer;
     // Sprite Renderer에 넣을 Sprite를 저장
     public Sprite sprite;
+    // Sprite의 반전에 사용되는 flipX
+    bool flipX = false;
+    [SerializeField]
+    RectTransform rectTr; // Boos의 Rect Transform
+    [SerializeField]
+    private Transform playerTr; // Player Transform
+
 
     [Header("Animation Clips")]
     bool isFall = true;
@@ -45,6 +52,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     // 슬라이딩 돌진할 때 사용되는 Sprite
     public Sprite[] dashSprites;
 
+    // 특정 횟수마다 Component Reset 실행
     short settingCount = 0;
 
     // Sprite Renderer의 Draw Mode
@@ -54,11 +62,21 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     // Sprite Renderer의 Order in Layout 값
     int sortLayer;
 
+    [Header("Dash")]
+    [SerializeField]
+    private Vector2 attackVector;
+    [SerializeField]
+    private float dashSpeed = 6f;
+    [SerializeField]
+    private float currDashSpeed;
+    [SerializeField]
+    private float dashTime;
+
     //private float gravity = -0.085f;
     //[SerializeField]
     //private int gravityCount = 0;
-    [Header("Ground")]
-    [SerializeField]
+    //[Header("Ground")]
+    //[SerializeField]
     // Boss가 땅에 붙어있을 경우
     // 피해를 받았을 때 뒤로 살짝떠서 밀려났다가
     // 바닥에 닿으면 다음 동작을 수행하거나
@@ -114,6 +132,12 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         maskRenderer = maskObj.GetComponent<SpriteRenderer>();
         maskSprite = maskObj.GetComponent<SpriteMask>();
 
+        rectTr = GetComponent<RectTransform>();
+
+        attackVector = new Vector3();
+
+        playerTr = GameObject.FindGameObjectWithTag("PLAYER").GetComponent<Transform>();
+
         //IsGround();
         //sprite = spriteRenderer.sprite;
         SpriteChange(spriteRenderer.sprite);
@@ -121,6 +145,9 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         //StartCoroutine(CoComponentReset());
 
         Hp = maxHp;
+
+        dashSpeed = 16f;
+
     }
 
     private void FixedUpdate()
@@ -144,6 +171,15 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
             ComponentReset();
         }
 
+        if (isDash)
+        {
+
+            rectTr.Translate(new Vector3(attackVector.x * (currDashSpeed * Time.deltaTime), 0, 0));
+            dashTime += Time.deltaTime * 23f;
+            dashTime = Mathf.Abs(dashTime);
+            currDashSpeed *= Mathf.Cos(dashTime * Mathf.Deg2Rad);
+        }
+
     }
 
 
@@ -157,6 +193,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         // 새로운 스프라이트를 변경해주는 코드.
         spriteRenderer.sprite = sprite;
 
+        //prePos = rectTr.position;
     }
 
 
@@ -169,9 +206,27 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         yield return StartCoroutine(CoStartAnim());
         while (true)
         {
-            yield return StartCoroutine(StopAnimationCoroutine());
-            yield return StartCoroutine(CoDashAnim());
 
+            int num = Random.Range(0, 1);
+            switch (num)
+            {
+                case 0:
+                    Debug.Log("_____DASH_____");
+                    yield return StartCoroutine(LookPlayer());
+                    yield return StartCoroutine(StopAnimationCoroutine());
+                    yield return StartCoroutine(CoDashAnim());
+
+                    break;
+                case 1:
+
+                    break;
+                default:
+
+
+                    break;
+            }
+
+            yield return StartCoroutine(LookPlayer());
             yield return StartCoroutine(StopAnimationCoroutine());
             yield return StartCoroutine(CoIdleAnim());
 
@@ -182,7 +237,6 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         yield break;
     }
     #endregion
-
 
 
 
@@ -235,6 +289,20 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
+        //Debug.Log(rb2d.velocity);
+        if (collision.gameObject.CompareTag("WALL"))
+        {
+            currDashSpeed *= -1f;
+            spriteRenderer.flipX = !spriteRenderer.flipX;
+            Debug.Log("____Reflect____");
+            //Debug.Log(rb2d.velocity);
+            //Vector2 vector = new Vector2(rb2d.velocity.x * -1, rb2d.velocity.y);
+            //Vector2 vector = Vector2.Reflect(rb2d.velocity, -collision.contacts[0].normal);
+            //rb2d.velocity = vector;
+            //Debug.Log(rb2d.velocity);
+
+        }
+
         //Collider2D coll2d = collision.gameObject.GetComponent<Collider2D>();
         //Vector2 pos = coll2d.ClosestPoint(polyCollider2D.bounds.center);
         //Debug.Log(collision.collider.name + ": " + pos);
@@ -261,6 +329,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
             drawMode = renderer.drawMode;
             tileMode = renderer.tileMode;
             sortLayer = renderer.sortingOrder;
+            flipX = renderer.flipX;
             // Sprite Renderer를 제거한다.
             Destroy(renderer);
         }
@@ -277,6 +346,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
             spriteRenderer.drawMode = drawMode;
             spriteRenderer.tileMode = tileMode;
             spriteRenderer.sortingOrder = sortLayer;
+            spriteRenderer.flipX = flipX;
 
             //spriteRenderer.sprite = sprite;
         }
@@ -435,7 +505,6 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     #endregion
 
 
-
     #region Jump Animation Coroutine
     // 점프 애니메이션
     IEnumerator CoJumpAnim()
@@ -486,18 +555,27 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     // 돌진 애니메이션
     IEnumerator CoDashAnim()
     {
+        currDashSpeed = dashSpeed;
+        dashTime = 0f;
+        attackVector = playerTr.position - polyCollider2D.bounds.center;
+        attackVector.Normalize();
+
         isDash = true;
         Debug.Log("Dash Start");
         while (true)
         {
-
+            SpriteChange(readySprites[0]);
+            yield return new WaitForSeconds(0.075f);
             SpriteChange(dashSprites[0]);
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.125f);
             SpriteChange(dashSprites[1]);
-            yield return new WaitForSeconds(5f);
+            //rb2d.AddForce(-transform.right * 60f, ForceMode2D.Impulse);
+            yield return new WaitForSeconds(1f);
 
             Debug.Log("Dash End");
 
+
+            isDash = false;
             yield break;
         }
 
@@ -611,5 +689,25 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     }
     #endregion
 
+
+    IEnumerator LookPlayer()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(0.1f);
+
+            SpriteChange(turnSprites[0]);
+
+            Vector2 dir = playerTr.position - polyCollider2D.bounds.center;
+            // 플레이어가 왼쪽에 있는 경우
+            if (dir.x < 0) { flipX = false; }
+            // 플레이어가 오른쪽에 있는 경우
+            else { flipX = true; }
+            spriteRenderer.flipX = flipX;
+
+            yield return new WaitForSeconds(0.2f);
+            yield break;
+        }
+    }
 
 }
