@@ -51,6 +51,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     bool isDash = false;
     // 슬라이딩 돌진할 때 사용되는 Sprite
     public Sprite[] dashSprites;
+    bool isAttack = false;
 
     // 특정 횟수마다 Component Reset 실행
     short settingCount = 0;
@@ -66,12 +67,17 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     [SerializeField]
     private Vector2 attackVector;
     [SerializeField]
-    private float dashSpeed = 6f;
+    private float dashSpeed = 22.5f;
     [SerializeField]
-    private float currDashSpeed;
+    private float currSpeed;
     [SerializeField]
     private float dashTime;
-
+    [SerializeField]
+    private float jumpVerticalSpeed;
+    [SerializeField]
+    private float jumpHorizontalSpeed;
+    [SerializeField]
+    private float jumpTime;
     //private float gravity = -0.085f;
     //[SerializeField]
     //private int gravityCount = 0;
@@ -88,6 +94,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     [Header("Mask")]
     // Mask 게임 오브젝트
     public GameObject maskObj;
+    RectTransform maskRectTransform;
     [SerializeField]
     // Mask Game Object의 Sprite Renderer
     private SpriteRenderer maskRenderer;
@@ -134,9 +141,12 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
 
         rectTr = GetComponent<RectTransform>();
 
+        playerTr = GameObject.FindGameObjectWithTag("PLAYER").GetComponent<Transform>();
+
+        maskRectTransform = maskObj.GetComponent<RectTransform>();
+
         attackVector = new Vector3();
 
-        playerTr = GameObject.FindGameObjectWithTag("PLAYER").GetComponent<Transform>();
 
         //IsGround();
         //sprite = spriteRenderer.sprite;
@@ -145,8 +155,10 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         //StartCoroutine(CoComponentReset());
 
         Hp = maxHp;
+        dashSpeed = 22.5f;
 
-        dashSpeed = 16f;
+        jumpHorizontalSpeed = 3f;
+        jumpVerticalSpeed = 12f;
 
     }
 
@@ -168,16 +180,36 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         //if(gameObject.compon)
         if (settingCount >= 10)
         {
+            // 일정 주기마다 Sprite Renderer Reset
             ComponentReset();
         }
 
         if (isDash)
         {
-
-            rectTr.Translate(new Vector3(attackVector.x * (currDashSpeed * Time.deltaTime), 0, 0));
+            // attackVector(방향) * 현재 속도 * 델타 타임 만큼의 속도로 대쉬
+            rectTr.Translate(new Vector3(attackVector.x * (currSpeed * Time.deltaTime), 0, 0));
+            // 현재 대쉬 시간을 증가
             dashTime += Time.deltaTime * 23f;
+            // Cos에 사용될 값이라 절대값을 사용해서 양수 값으로 만든다.
+            // 시간상 0~90 Rad의 값이 사용될 것이다.
             dashTime = Mathf.Abs(dashTime);
-            currDashSpeed *= Mathf.Cos(dashTime * Mathf.Deg2Rad);
+            // Cos을 사용해서 천천히 움직이는 속도가 줄어들게 하였다.
+            currSpeed *= Mathf.Cos(dashTime * Mathf.Deg2Rad);
+            //if (currDashSpeed <= 0) { currDashSpeed = 0; }
+        }
+
+
+        if (isJump)
+        {
+            //Debug.Log("Is Jump: " + isJump);
+
+            // 공격 방향 * 고정 횡 이동 속도 * 델타 타임 / 현재속도(Vertical) * 델타 타임으로 이동.
+            rectTr.Translate(new Vector3(attackVector.x * (jumpHorizontalSpeed * Time.deltaTime), currSpeed * Time.deltaTime, 0f));
+
+            // 점프 속도는 점점 느려졌다가 빨라져야 한다. 위로 갔다가 아래로 내려와야 한다.
+            jumpTime += Time.deltaTime * 120f;
+            currSpeed = jumpVerticalSpeed * Mathf.Cos(jumpTime * Mathf.Deg2Rad);
+
         }
 
     }
@@ -185,15 +217,37 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
 
     private void LateUpdate()
     {
+
         if (settingCount++ >= 10)
         {
             ComponentReset();
             settingCount = 0;
         }
-        // 새로운 스프라이트를 변경해주는 코드.
-        spriteRenderer.sprite = sprite;
-
         //prePos = rectTr.position;
+
+        // 새로운 스프라이트를 변경해주는 코드.
+        if (TryGetComponent<SpriteRenderer>(out spriteRenderer))
+        {
+            //Debug.Log("Sprite Change");
+            spriteRenderer.flipX = flipX;
+            spriteRenderer.sprite = sprite;
+            //maskRenderer.sprite = sprite;
+            //maskRenderer.flipX = flipX;
+            maskSprite.sprite = sprite;
+            if (flipX == true)
+            {
+                Vector3 maskScale = maskRectTransform.localScale;
+                maskScale.x = -1f;
+                maskRectTransform.localScale = maskScale;
+            }
+            else
+            {
+                Vector3 maskScale = maskRectTransform.localScale;
+                maskScale.x = 1f;
+                maskRectTransform.localScale = maskScale;
+            }
+
+        }
     }
 
 
@@ -204,20 +258,29 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         Debug.Log("Pattern Start");
 
         yield return StartCoroutine(CoStartAnim());
+
+
         while (true)
         {
+            yield return StartCoroutine(CoLookPlayer());
 
-            int num = Random.Range(0, 1);
+            int num = Random.Range(1, 2);
+            isAttack = true;
             switch (num)
             {
                 case 0:
                     Debug.Log("_____DASH_____");
-                    yield return StartCoroutine(LookPlayer());
+
                     yield return StartCoroutine(StopAnimationCoroutine());
                     yield return StartCoroutine(CoDashAnim());
 
                     break;
                 case 1:
+                    Debug.Log("____JUMP____");
+
+                    yield return StartCoroutine(StopAnimationCoroutine());
+                    yield return StartCoroutine(CoJumpAnim());
+
 
                     break;
                 default:
@@ -226,8 +289,13 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
                     break;
             }
 
-            yield return StartCoroutine(LookPlayer());
+
+            isAttack = false;
+
             yield return StartCoroutine(StopAnimationCoroutine());
+
+            yield return StartCoroutine(CoLookPlayer());
+
             yield return StartCoroutine(CoIdleAnim());
 
             Debug.Log("Pattern Loop");
@@ -289,11 +357,47 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        //Debug.Log(rb2d.velocity);
+        ////Debug.Log(rb2d.velocity);
+        //if (collision.gameObject.CompareTag("WALL"))
+        //{
+        //    currDashSpeed *= -1f;
+        //    flipX = !flipX;
+        //    Debug.Log("____Reflect____");
+        //    //Debug.Log(rb2d.velocity);
+        //    //Vector2 vector = new Vector2(rb2d.velocity.x * -1, rb2d.velocity.y);
+        //    //Vector2 vector = Vector2.Reflect(rb2d.velocity, -collision.contacts[0].normal);
+        //    //rb2d.velocity = vector;
+        //    //Debug.Log(rb2d.velocity);
+        //}
+
+
+
+        if (collision.gameObject.CompareTag("PLAYER"))
+        {
+
+            Debug.Log("COLL PLAYER");
+        }
+
+
+        //Collider2D coll2d = collision.gameObject.GetComponent<Collider2D>();
+        //Vector2 pos = coll2d.ClosestPoint(polyCollider2D.bounds.center);
+        //Debug.Log(collision.collider.name + ": " + pos);
+    }
+
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        //if (collision.gameObject.CompareTag("BULLET"))
+        //{
+        //    float v = collision.bounds.center.x - polyCollider2D.bounds.center.x;
+        //    Debug.Log("V: " + v);
+
+        //}
+
         if (collision.gameObject.CompareTag("WALL"))
         {
-            currDashSpeed *= -1f;
-            spriteRenderer.flipX = !spriteRenderer.flipX;
+            currSpeed *= -1f;
+            flipX = !flipX;
             Debug.Log("____Reflect____");
             //Debug.Log(rb2d.velocity);
             //Vector2 vector = new Vector2(rb2d.velocity.x * -1, rb2d.velocity.y);
@@ -303,10 +407,15 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
 
         }
 
-        //Collider2D coll2d = collision.gameObject.GetComponent<Collider2D>();
-        //Vector2 pos = coll2d.ClosestPoint(polyCollider2D.bounds.center);
-        //Debug.Log(collision.collider.name + ": " + pos);
+        if (collision.CompareTag("PLAYER"))
+        {
+
+            Debug.Log("TRIGGER PLAYER");
+        }
     }
+
+
+
 
 
     #region Component Reset Function
@@ -360,24 +469,24 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     {
         Debug.Log("Start Start");
 
-        while (true)
-        {
-            // 위에서 떨어지는 것부터 시작하니 떨어지는 애니메이션 코루틴
-            yield return StartCoroutine(CoFallAnim());
-            // 다른 코루틴이 동작하고 있을 수 있으므로 새로운 애니메이션을 시작하기 전에 다른 애니메이션 코루틴을 멈춰 준다.
-            yield return StartCoroutine(StopAnimationCoroutine());
-            yield return StartCoroutine(CoReadyAnim());
+        //while (true)
+        //{
+        // 위에서 떨어지는 것부터 시작하니 떨어지는 애니메이션 코루틴
+        yield return StartCoroutine(CoFallAnim());
+        // 다른 코루틴이 동작하고 있을 수 있으므로 새로운 애니메이션을 시작하기 전에 다른 애니메이션 코루틴을 멈춰 준다.
+        yield return StartCoroutine(StopAnimationCoroutine());
+        yield return StartCoroutine(CoReadyAnim());
 
-            yield return StartCoroutine(StopAnimationCoroutine());
-            yield return StartCoroutine(CoFillHPGauge());
-            yield return new WaitForSeconds(0.3f);
+        yield return StartCoroutine(StopAnimationCoroutine());
+        yield return StartCoroutine(CoFillHPGauge());
+        yield return new WaitForSeconds(0.3f);
 
-            yield return StartCoroutine(StopAnimationCoroutine());
-            yield return StartCoroutine(CoIdleAnim());
+        yield return StartCoroutine(StopAnimationCoroutine());
+        yield return StartCoroutine(CoIdleAnim());
 
-            Debug.Log("Start End");
-            yield break;
-        }
+        Debug.Log("Start End");
+        yield break;
+        //}
     }
     #endregion
 
@@ -391,7 +500,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         isFillGauge = true;
         while (true)
         {
-            HPGauge.fillAmount += 0.02f;
+            HPGauge.fillAmount += 0.05f;
             yield return new WaitForFixedUpdate();
 
             if (HPGauge.fillAmount >= 1)
@@ -415,38 +524,38 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         Debug.Log("Fall Start");
 
         isFall = true;
-        while (true)
+        //while (true)
+        //{
+        // 땅에 떨어질 때까지
+        while (isGround == false)
         {
-            // 땅에 떨어질 때까지
-            while (isGround == false)
-            {
-                // fallSprite의 0번
-                SpriteChange(fallSprites[0]);
-                yield return new WaitForSeconds(0.1f);
-            }
-            SpriteChange(fallSprites[1]);
-            //sprite = fallSprites[1];
-            yield return new WaitForSeconds(0.25f);
-            SpriteChange(fallSprites[2]);
-            //sprite = fallSprites[2];
-            yield return new WaitForSeconds(0.25f);
-            SpriteChange(fallSprites[3]);
-            //sprite = fallSprites[3];
-            yield return new WaitForSeconds(0.25f);
-            SpriteChange(fallSprites[1]);
-            //sprite = fallSprites[1];
-            yield return new WaitForSeconds(0.25f);
-            SpriteChange(fallSprites[2]);
-            //sprite = fallSprites[2];
-            yield return new WaitForSeconds(0.25f);
-            SpriteChange(fallSprites[3]);
-            //sprite = fallSprites[3];
-            yield return new WaitForSeconds(0.25f);
-            isFall = false;
-
-            Debug.Log("Fall End");
-            yield break;
+            // fallSprite의 0번
+            SpriteChange(fallSprites[0]);
+            yield return new WaitForSeconds(0.1f);
         }
+        SpriteChange(fallSprites[1]);
+        //sprite = fallSprites[1];
+        yield return new WaitForSeconds(0.25f);
+        SpriteChange(fallSprites[2]);
+        //sprite = fallSprites[2];
+        yield return new WaitForSeconds(0.25f);
+        SpriteChange(fallSprites[3]);
+        //sprite = fallSprites[3];
+        yield return new WaitForSeconds(0.25f);
+        SpriteChange(fallSprites[1]);
+        //sprite = fallSprites[1];
+        yield return new WaitForSeconds(0.25f);
+        SpriteChange(fallSprites[2]);
+        //sprite = fallSprites[2];
+        yield return new WaitForSeconds(0.25f);
+        SpriteChange(fallSprites[3]);
+        //sprite = fallSprites[3];
+        yield return new WaitForSeconds(0.25f);
+        isFall = false;
+
+        Debug.Log("Fall End");
+        yield break;
+        //}
     }
     #endregion
 
@@ -465,10 +574,11 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
             count += 1f;
             SpriteChange(idleSprites[0]);
             //sprite = idleSprites[0];
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.4f);
             SpriteChange(idleSprites[1]);
             //sprite = idleSprites[1];
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.4f);
+            StartCoroutine(CoLookPlayer());
             if (count >= random)
             {
                 Debug.Log("Idle End");
@@ -486,21 +596,21 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     {
         Debug.Log("Damage Anim");
 
-        while (isDamaged)
+        //while (isDamaged)
+        //{
+        SpriteChange(damagedSprites[0]);
+        //sprite = damagedSprites[0];
+        yield return new WaitForSeconds(0.3f);
+
+        if (isGround)
         {
-            SpriteChange(damagedSprites[0]);
-            //sprite = damagedSprites[0];
-            yield return new WaitForSeconds(0.3f);
+            isDamaged = false;
 
-            if (isGround)
-            {
-                isDamaged = false;
+            Debug.Log("Damage End");
 
-                Debug.Log("Damage End");
-
-                yield break;
-            }
+            yield break;
         }
+        //}
     }
     #endregion
 
@@ -511,42 +621,72 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     {
         Debug.Log("Jump Start");
 
-        while (true)
+        isJump = true;
+        SetAttackState(isJump);
+
+        attackVector.x = playerTr.position.x > polyCollider2D.bounds.center.x ? 1 : -1;
+
+        currSpeed = jumpVerticalSpeed;
+        jumpTime = 0f;
+
+        //while (true)
+        //{
+        SpriteChange(jumpSprites[0]);
+        yield return new WaitForSeconds(0.05f);
+        SpriteChange(jumpSprites[1]);
+        yield return new WaitForSeconds(0.75f);
+
+        while (isGround == false)
         {
-
-
-            Debug.Log("Jump End");
-
-            yield break;
+            SpriteChange(fallSprites[0]);
+            yield return new WaitForSeconds(0.1f);
         }
+        isJump = false;
+        SetAttackState(isJump);
+
+
+        SpriteChange(fallSprites[1]);
+        yield return new WaitForSeconds(0.1f);
+        SpriteChange(fallSprites[2]);
+        yield return new WaitForSeconds(0.2f);
+        SpriteChange(fallSprites[3]);
+        yield return new WaitForSeconds(0.1f);
+
+
+        Debug.Log("Jump End");
+
+        yield break;
+        //}
     }
     #endregion
 
 
+
+
     #region Ready Animation Coroutine
-    // 준비 동작 애니메이션
+    // 준비 동작 애니메이션 (보스 등장시 체력 차는 중)
     IEnumerator CoReadyAnim()
     {
         isReady = true;
         Debug.Log("Ready Start");
 
-        while (true)
-        {
-            SpriteChange(readySprites[0]);
-            //sprite = readySprites[0];
-            yield return new WaitForSeconds(0.1f);
-            SpriteChange(readySprites[1]);
-            //sprite = readySprites[1];
-            yield return new WaitForSeconds(0.1f);
-            SpriteChange(readySprites[2]);
-            //sprite = readySprites[2];
-            yield return new WaitForSeconds(1.1f);
-            isReady = false;
+        //while (true)
+        //{
+        SpriteChange(readySprites[0]);
+        //sprite = readySprites[0];
+        yield return new WaitForSeconds(0.1f);
+        SpriteChange(readySprites[1]);
+        //sprite = readySprites[1];
+        yield return new WaitForSeconds(0.1f);
+        SpriteChange(readySprites[2]);
+        //sprite = readySprites[2];
+        yield return new WaitForSeconds(1.1f);
+        isReady = false;
 
-            Debug.Log("Ready End");
+        Debug.Log("Ready End");
 
-            yield break;
-        }
+        yield break;
+        //}
     }
     #endregion
 
@@ -555,33 +695,80 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     // 돌진 애니메이션
     IEnumerator CoDashAnim()
     {
-        currDashSpeed = dashSpeed;
+        SpriteChange(readySprites[0]);
+        yield return new WaitForSeconds(0.25f);
+
+        SpriteChange(dashSprites[0]);
+        yield return new WaitForSeconds(0.11f);
+
+        currSpeed = dashSpeed;
         dashTime = 0f;
-        attackVector = playerTr.position - polyCollider2D.bounds.center;
-        attackVector.Normalize();
+
+        // 공격 방향 설정.
+        // 플레이어가 왼쪽이면 -1, 플레이어가 오른쪽이면 1
+        attackVector.x = playerTr.position.x > polyCollider2D.bounds.center.x ? 1 : -1;
+
+        //Debug.Log("Player" + playerTr.position);
+        //Debug.Log("Center: " + polyCollider2D.bounds.center);
+        //Debug.Log("Attac Vector X: " + attackVector.x);
 
         isDash = true;
+
+        SetAttackState(isDash);
+
         Debug.Log("Dash Start");
-        while (true)
-        {
-            SpriteChange(readySprites[0]);
-            yield return new WaitForSeconds(0.075f);
-            SpriteChange(dashSprites[0]);
-            yield return new WaitForSeconds(0.125f);
-            SpriteChange(dashSprites[1]);
-            //rb2d.AddForce(-transform.right * 60f, ForceMode2D.Impulse);
-            yield return new WaitForSeconds(1f);
+        //while (true)
+        //{
 
-            Debug.Log("Dash End");
+        SpriteChange(dashSprites[1]);
+        //rb2d.AddForce(-transform.right * 60f, ForceMode2D.Impulse);
+        yield return new WaitForSeconds(1.3f);
+
+        Debug.Log("Dash End");
 
 
-            isDash = false;
-            yield break;
-        }
+        isDash = false;
+
+        SetAttackState(isDash);
+
+        yield break;
+        //}
 
 
     }
+
     #endregion
+
+    // 공격 중일 때의 상태로 변경하는 함수.
+    void SetAttackState(bool _isState)
+    {
+        if (_isState)
+        {
+            // velocity 값을 0으로 설정해서 현재 받고 있는 속도 값을 0으로 만듬
+            rb2d.velocity = Vector2.zero;
+            // 중력 값을 0으로 변경
+            rb2d.gravityScale = 0f;
+
+            // Kinematic 상태로 bodyType 변경
+            rb2d.bodyType = RigidbodyType2D.Kinematic;
+
+
+            // Trigger 상태로 변경
+            polyCollider2D.isTrigger = true;
+        }
+        else
+        {
+            // Trigger 상태를 끔
+            polyCollider2D.isTrigger = false;
+
+            // Dynamic 상태로 bodyType 변경
+            rb2d.bodyType = RigidbodyType2D.Dynamic;
+
+            // 중력 값을 1.5로 변경
+            rb2d.gravityScale = 1.5f;
+
+        }
+    }
 
 
     #region All Stop Animation Coroutine
@@ -625,6 +812,11 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
             isFillGauge = false;
             StopCoroutine(CoFillHPGauge());
         }
+        if (isTurn)
+        {
+            isTurn = false;
+            StopCoroutine(CoLookPlayer());
+        }
 
         Debug.Log("Stop End");
         yield break;
@@ -650,9 +842,19 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         HPGauge.fillAmount = Hp / maxHp;
 
         // 
-        isDamaged = true;
-        StartCoroutine(CoDamagedAnim());
-        Blank();
+        if (!isDamaged && isAttack == false)
+        {
+            // 힘을 받는 방향으로 밀친다.
+            // 공격 중이거나 피해를 받아서 이미 깜빡이고 있는 경우 이 동작을 다시 수행하지 않는다.
+            rb2d.AddForce(new Vector2(hitNormal.x, Mathf.Abs(hitNormal.x * Mathf.Tan(60 * Mathf.Deg2Rad))).normalized * 11f, ForceMode2D.Impulse);
+
+            //Debug.Log("Vector: " + new Vector2(hitNormal.x, hitNormal.x * Mathf.Tan(45 * Mathf.Deg2Rad)));
+
+            StartCoroutine(StopAnimationCoroutine());
+            isDamaged = true;
+            StartCoroutine(CoDamagedAnim());
+            Blank();
+        }
 
     }
 
@@ -690,24 +892,29 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     #endregion
 
 
-    IEnumerator LookPlayer()
+    #region Looking Player Coroutine
+    // 플레이어를 쳐다보게 만드는 코루틴
+    IEnumerator CoLookPlayer()
     {
-        while (true)
-        {
-            yield return new WaitForSeconds(0.1f);
+        //Debug.Log("Look Player");
+        //while (true)
+        //{
+        //yield return new WaitForSeconds(0.1f);
+        isTurn = true;
+        SpriteChange(turnSprites[0]);
 
-            SpriteChange(turnSprites[0]);
+        yield return new WaitForSeconds(0.15f);
 
-            Vector2 dir = playerTr.position - polyCollider2D.bounds.center;
-            // 플레이어가 왼쪽에 있는 경우
-            if (dir.x < 0) { flipX = false; }
-            // 플레이어가 오른쪽에 있는 경우
-            else { flipX = true; }
-            spriteRenderer.flipX = flipX;
+        Vector2 dir = playerTr.position - polyCollider2D.bounds.center;
+        // 플레이어가 왼쪽에 있는 경우
+        if (dir.x < 0) { flipX = false; }
+        // 플레이어가 오른쪽에 있는 경우
+        else { flipX = true; }
 
-            yield return new WaitForSeconds(0.2f);
-            yield break;
-        }
+        isTurn = false;
+        yield break;
     }
+    //}
+    #endregion
 
 }
