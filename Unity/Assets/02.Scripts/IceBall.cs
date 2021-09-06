@@ -38,10 +38,9 @@ public class IceBall : MonoBehaviour
         {
             Destroy(this.gameObject);
         }
-
         else if (collision.CompareTag("PLAYER"))
         {
-            Debug.Log("HIT PLAYER ICE BALL");
+            //Debug.Log("HIT PLAYER ICE BALL");
             // 충돌한 물체와 현재 물체의 Collider에서 가장 가까운 지점 확인
             Vector2 cloestPoint = collision.ClosestPoint(gameObject.GetComponent<Collider2D>().bounds.center);
             // 충돌한 지점의 벡터 설정.
@@ -53,9 +52,9 @@ public class IceBall : MonoBehaviour
 
             Destroy(this.gameObject);
         }
-
         else if (collision.CompareTag("SNOWMAN"))
         {
+            //Debug.Log("HIT SNOW MAN ICE BALL");
             SnowMan snowMan = collision.GetComponent<SnowMan>();
             snowMan.Damaged(damage, Vector3.zero, Vector3.zero);
 

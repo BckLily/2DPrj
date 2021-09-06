@@ -67,6 +67,23 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     // Sprite Renderer의 Order in Layout 값
     int sortLayer;
 
+    // Animation Coroutines
+    IEnumerator IBossPattern;
+    IEnumerator IDashAnim;
+    IEnumerator IJumpAnim;
+    IEnumerator IDamageAnim;
+    IEnumerator IIceBreathAnim;
+    IEnumerator IIceBallAnim;
+    IEnumerator IStartAnim;
+    IEnumerator IFallAnim;
+    IEnumerator IReadyAnim;
+    IEnumerator IIdleAnim;
+    IEnumerator IBlankAnim;
+    IEnumerator ILookAnim;
+    IEnumerator IFillHpGauge;
+
+
+
     [Header("Dash")]
     [SerializeField]
     private Vector2 attackVector;
@@ -93,7 +110,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     // 점프했다가 바닥에 내려오면 다음 동작을 하는 등...
     // 여러가지 경우에 사용된다.
     bool isGround;
-
+    bool isStageStart = false;
 
     [Header("Mask")]
     // Mask 게임 오브젝트
@@ -144,6 +161,9 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     float dashDamage = 50f;
     float contactDamage = 10f;
 
+    [Header("Die Effect")]
+    public GameObject dieEffect;
+
 
     // Start is called before the first frame update
     void Start()
@@ -170,7 +190,8 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         //IsGround();
         //sprite = spriteRenderer.sprite;
         SpriteChange(spriteRenderer.sprite);
-        StartCoroutine(CoBossPattern());
+        IBossPattern = CoBossPattern();
+        StartCoroutine(IBossPattern);
         //StartCoroutine(CoComponentReset());
 
         Hp = maxHp;
@@ -191,12 +212,17 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     void Update()
     {
         //Debug.Log(polyCollider2D.bounds.size.y);
-        Debug.DrawRay(polyCollider2D.bounds.center, -transform.up, Color.red, (polyCollider2D.bounds.size.y / 2) + 0.01f);
+        //Debug.DrawRay(polyCollider2D.bounds.center, -transform.up, Color.red, (polyCollider2D.bounds.size.y / 2) + 0.01f);
+        // 바닥에 붙어있는지 확인한다.
         IsGround();
         // Trigger 였을 때 중력 만들 때 사용한 것.
         //GetGravity();
 
-        HealthBarChange();
+        // 체력바 상태 값 변경
+        if (isStageStart)
+        {
+            HealthBarChange();
+        }
 
         //if(gameObject.compon)
         if (settingCount >= 10)
@@ -205,6 +231,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
             ComponentReset();
         }
 
+        // 대쉬 중일 경우 실행
         if (isDash)
         {
             // attackVector(방향) * 현재 속도 * 델타 타임 만큼의 속도로 대쉬
@@ -219,7 +246,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
             //if (currDashSpeed <= 0) { currDashSpeed = 0; }
         }
 
-
+        // 점프 중일 경우 실행
         if (isJump)
         {
             //Debug.Log("Is Jump: " + isJump);
@@ -256,6 +283,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
             //maskRenderer.flipX = flipX;
             maskSprite.sprite = sprite;
 
+            // Sprite가 반전되어있을 경우
             if (flipX == true)
             {
                 // 마스크의 로컬 스케일을 저장
@@ -275,60 +303,81 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     }
 
 
+    // 체력 바를 채우는 함수
     void HealthBarChange()
     {
+        // 체력 바 이미지는 20개의 게이지로 되어있으므로
+        // 체력이 어느정도 깎이면 게이지가 한 칸씩 줄어들도록 하였다.
         int gaugeValue = Mathf.CeilToInt(_hp / (maxHp / gaugeDiff));
         HPGauge.fillAmount = (float)gaugeValue / gaugeDiff;
     }
 
 
-    #region Boss Pattern Coroutine
     // 보스 패턴을 설정하는 코루틴
+    #region Boss Pattern Coroutine
     IEnumerator CoBossPattern()
     {
-        Debug.Log("Pattern Start");
-
-        yield return StartCoroutine(CoStartAnim());
-
+        //Debug.Log("Pattern Start");
+        // 보스가 처음 등장할 때 동작하는 애니메이션 코루틴
+        IStartAnim = CoStartAnim();
+        yield return StartCoroutine(IStartAnim);
 
         while (true)
         {
-            yield return StartCoroutine(CoLookPlayer());
+            // 플레이어의 위치를 쳐다보는 코루틴
+            ILookAnim = CoLookPlayer();
+            yield return StartCoroutine(ILookAnim);
+            // 혹시 다른 애니메이션 코루틴이 동작하고 있을 수 있으므로 애니메이션과 관련된 코루틴을 모두 정지시킨다.
+            yield return StartCoroutine(StopAnimationCoroutine());
 
+            // 여러 개의 패턴이 있으므로 각 패턴에 맞게 동작하기 위한 랜덤 값.
+            // 특정 값의 확률을 높이고 싶으면 여러 개의 case를 break 없이 연결할 수 있다.
             int num = Random.Range(0, 4);
+            // 공격 중임을 표시하기 위해서 isAttack을 true로 표시한다.
             isAttack = true;
             switch (num)
             {
                 // 대쉬 패턴
                 case 0:
-                    Debug.Log("_____DASH_____");
+                    //Debug.Log("_____DASH_____");
+                    // Dash의 경우 공격력이 높으므로 현재의 공격력을 대쉬 공격력으로 바꿔준다.
                     currDamage = dashDamage;
-                    yield return StartCoroutine(StopAnimationCoroutine());
-                    yield return StartCoroutine(CoDashAnim());
+                    // 혹시 다른 애니메이션 코루틴이 동작하고 있을 수 있으므로 애니메이션과 관련된 코루틴을 모두 정지시킨다.
+                    //yield return StartCoroutine(StopAnimationCoroutine());
+                    // 대쉬 애니메이션 코루틴을 실행한다.
+                    IDashAnim = CoDashAnim();
+                    yield return StartCoroutine(IDashAnim);
+                    // 대쉬가 끝나면 현재 공격력을 단순 접촉 시 공격력으로 변경한다.
                     currDamage = contactDamage;
                     break;
                 // 점프 패턴
                 case 1:
-                    Debug.Log("____JUMP____");
+                    //Debug.Log("____JUMP____");
 
-                    yield return StartCoroutine(StopAnimationCoroutine());
-                    yield return StartCoroutine(CoJumpAnim());
+                    //yield return StartCoroutine(StopAnimationCoroutine());
+                    // 점프 애니메이션 코루틴 실행
+                    IJumpAnim = CoJumpAnim();
+                    yield return StartCoroutine(IJumpAnim);
 
                     break;
                 // 브래스 패턴
                 case 2:
-                    Debug.Log("____BREATH____");
+                    //Debug.Log("____BREATH____");
 
-                    yield return StartCoroutine(StopAnimationCoroutine());
-                    yield return StartCoroutine(CoIceBreathAnim());
+                    //yield return StartCoroutine(StopAnimationCoroutine());
+                    // 얼음 브레스 애니메이션 코루틴 실행
+                    IIceBreathAnim = CoIceBreathAnim();
+                    yield return StartCoroutine(IIceBreathAnim);
 
                     break;
                 // 얼음 구체 패턴
                 case 3:
-                    Debug.Log("____ICEBALL____");
+                    //Debug.Log("____ICEBALL____");
 
-                    yield return StartCoroutine(StopAnimationCoroutine());
-                    yield return StartCoroutine(CoIceBallAnim());
+                    //yield return StartCoroutine(StopAnimationCoroutine());
+                    // 얼음 발사하는 애니메이션 코루틴 실행
+                    IIceBallAnim = CoIceBallAnim();
+                    yield return StartCoroutine(IIceBallAnim);
 
                     break;
                 default:
@@ -336,17 +385,22 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
 
                     break;
             }
-
+            // 공격 상태가 종료되었으므로 isAttack을 false로 한다.
             isAttack = false;
 
+            // 혹시 애니메이션이 동작하고 있을 수 있으므로 종료시켜준다.
             yield return StartCoroutine(StopAnimationCoroutine());
-            yield return StartCoroutine(CoLookPlayer());
-            yield return StartCoroutine(CoIdleAnim());
+            // 공격이 끝난 후 플레이어의 방향을 보도록 한다.
+            ILookAnim = CoLookPlayer();
+            yield return StartCoroutine(ILookAnim);
+            // 기본 대기 상태 애니메이션 코루틴을 실행한다.
+            IIdleAnim = CoIdleAnim();
+            yield return StartCoroutine(IIdleAnim);
 
-            Debug.Log("Pattern Loop");
+            //Debug.Log("Pattern Loop");
         }
 
-        Debug.Log("Pattern End");
+        //Debug.Log("Pattern End");
         yield break;
     }
     #endregion
@@ -399,7 +453,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         maskSprite.sprite = nextSprite;
     }
 
-
+    // 통상 상태일 때 충돌 판정
     private void OnCollisionEnter2D(Collision2D collision)
     {
         ////Debug.Log(rb2d.velocity);
@@ -415,14 +469,14 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         //    //Debug.Log(rb2d.velocity);
         //}
 
-
+        // 플레이어와 부딪히면
         if (collision.gameObject.CompareTag("PLAYER"))
         {
-
             megaman _megaman = collision.gameObject.GetComponent<megaman>();
+            // 플레이어에게 데미지를 입힌다.
             _megaman.Damaged(currDamage, collision.contacts[0].point, collision.contacts[0].normal);
 
-            Debug.Log("COLL PLAYER");
+            //Debug.Log("COLL PLAYER");
         }
 
 
@@ -431,7 +485,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         //Debug.Log(collision.collider.name + ": " + pos);
     }
 
-
+    // 대쉬 및 점프 중일 때 피격 판정
     private void OnTriggerEnter2D(Collider2D collision)
     {
         //if (collision.gameObject.CompareTag("BULLET"))
@@ -541,24 +595,30 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     // 처음 보스전을 시작할 때 Animation
     IEnumerator CoStartAnim()
     {
-        Debug.Log("Start Start");
+        //Debug.Log("Start Start");
 
         //while (true)
         //{
         // 위에서 떨어지는 것부터 시작하니 떨어지는 애니메이션 코루틴
-        yield return StartCoroutine(CoFallAnim());
+        IFallAnim = CoFallAnim();
+        yield return StartCoroutine(IFallAnim);
         // 다른 코루틴이 동작하고 있을 수 있으므로 새로운 애니메이션을 시작하기 전에 다른 애니메이션 코루틴을 멈춰 준다.
         yield return StartCoroutine(StopAnimationCoroutine());
-        yield return StartCoroutine(CoReadyAnim());
+        // 떨어지고나서 체력 게이지가 찰때까지의 동작
+        IReadyAnim = CoReadyAnim();
+        yield return StartCoroutine(IReadyAnim);
 
         yield return StartCoroutine(StopAnimationCoroutine());
-        yield return StartCoroutine(CoFillHPGauge());
+        // 체력 게이지를 체우는 코루틴 실행
+        IFillHpGauge = CoFillHPGauge();
+        yield return StartCoroutine(IFillHpGauge);
         yield return new WaitForSeconds(0.3f);
 
         yield return StartCoroutine(StopAnimationCoroutine());
-        yield return StartCoroutine(CoIdleAnim());
+        IIdleAnim = CoIdleAnim();
+        yield return StartCoroutine(IIdleAnim);
 
-        Debug.Log("Start End");
+        //Debug.Log("Start End");
         yield break;
         //}
     }
@@ -569,11 +629,12 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     // 체력 게이지 0~100%로 채우는 코루틴
     IEnumerator CoFillHPGauge()
     {
-        Debug.Log("FILL Gauge Start");
+        //Debug.Log("FILL Gauge Start");
 
         isFillGauge = true;
         while (true)
         {
+            // 20칸으로 나뉘어져 있어 0.05씩 증가시켰다.
             HPGauge.fillAmount += 0.05f;
             yield return new WaitForFixedUpdate();
 
@@ -582,7 +643,8 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
                 yield return new WaitForSeconds(0.3f);
                 isFillGauge = false;
 
-                Debug.Log("Fill Gauge End");
+                //Debug.Log("Fill Gauge End");
+                isStageStart = true;
                 yield break;
             }
         }
@@ -595,7 +657,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     // 떨어지는 애니메이션 코루틴
     IEnumerator CoFallAnim()
     {
-        Debug.Log("Fall Start");
+        //Debug.Log("Fall Start");
 
         isFall = true;
         //while (true)
@@ -627,7 +689,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         yield return new WaitForSeconds(0.25f);
         isFall = false;
 
-        Debug.Log("Fall End");
+        //Debug.Log("Fall End");
         yield break;
         //}
     }
@@ -638,7 +700,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     // 기본 동작 애니메이션
     IEnumerator CoIdleAnim()
     {
-        Debug.Log("Idle Start");
+        //Debug.Log("Idle Start");
 
         isIdle = true;
         float random = Random.Range(1.5f, 3.5f);
@@ -652,10 +714,11 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
             SpriteChange(idleSprites[1]);
             //sprite = idleSprites[1];
             yield return new WaitForSeconds(0.4f);
-            StartCoroutine(CoLookPlayer());
+            ILookAnim = CoLookPlayer();
+            StartCoroutine(ILookAnim);
             if (count >= random)
             {
-                Debug.Log("Idle End");
+                //Debug.Log("Idle End");
 
                 yield break;
             }
@@ -668,7 +731,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     // 공격 받았을 때의 애니메이션
     IEnumerator CoDamagedAnim()
     {
-        Debug.Log("Damage Anim");
+        //Debug.Log("Damage Anim");
 
         //while (isDamaged)
         //{
@@ -680,7 +743,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         {
             isDamaged = false;
 
-            Debug.Log("Damage End");
+            //Debug.Log("Damage End");
 
             yield break;
         }
@@ -693,7 +756,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     // 점프 애니메이션
     IEnumerator CoJumpAnim()
     {
-        Debug.Log("Jump Start");
+        //Debug.Log("Jump Start");
 
         isJump = true;
         SetAttackState(isJump);
@@ -727,7 +790,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         yield return new WaitForSeconds(0.1f);
 
 
-        Debug.Log("Jump End");
+        //Debug.Log("Jump End");
 
         yield break;
         //}
@@ -740,7 +803,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     IEnumerator CoReadyAnim()
     {
         isReady = true;
-        Debug.Log("Ready Start");
+        //Debug.Log("Ready Start");
 
         //while (true)
         //{
@@ -755,7 +818,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         yield return new WaitForSeconds(1.1f);
         isReady = false;
 
-        Debug.Log("Ready End");
+        //Debug.Log("Ready End");
 
         yield break;
         //}
@@ -788,7 +851,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
 
         SetAttackState(isDash);
 
-        Debug.Log("Dash Start");
+        //Debug.Log("Dash Start");
         //while (true)
         //{
 
@@ -796,8 +859,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         //rb2d.AddForce(-transform.right * 60f, ForceMode2D.Impulse);
         yield return new WaitForSeconds(1.3f);
 
-        Debug.Log("Dash End");
-
+        //Debug.Log("Dash End");
 
         isDash = false;
 
@@ -816,6 +878,8 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     IEnumerator CoIceBreathAnim()
     {
         isFire = true;
+
+        SetAttackState(isFire);
 
         SpriteChange(readySprites[0]);
         yield return new WaitForSeconds(0.15f);
@@ -840,6 +904,8 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
 
         isFire = false;
 
+        SetAttackState(isFire);
+
         yield break;
     }
 
@@ -850,6 +916,8 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     IEnumerator CoIceBallAnim()
     {
         isFire = true;
+
+        SetAttackState(isFire);
 
         SpriteChange(readySprites[0]);
         yield return new WaitForSeconds(0.15f);
@@ -865,6 +933,8 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
 
         isFire = false;
 
+        SetAttackState(isFire);
+
         yield break;
     }
     #endregion
@@ -872,6 +942,15 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     #region Chill Penguin Die Animation Coroutine
     IEnumerator CoDieAnim()
     {
+        StopCoroutine(IBossPattern);
+        yield return StartCoroutine(StopAnimationCoroutine());
+        SpriteChange(damagedSprites[0]);
+        GameObject effect = Instantiate(dieEffect, rectTr.position, Quaternion.identity);
+        Destroy(effect, 3f);
+        yield return new WaitForSeconds(3f);
+
+        Destroy(this.gameObject);
+
         yield break;
     }
 
@@ -913,56 +992,56 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     // 모든 애니메이션 코루틴을 멈추는 함수
     IEnumerator StopAnimationCoroutine()
     {
-        Debug.Log("Stop Start");
+        //Debug.Log("Stop Start");
 
         if (isFall)
         {
             isFall = false;
-            StopCoroutine(CoFallAnim());
+            StopCoroutine(IFallAnim);
         }
         if (isDamaged)
         {
             isDamaged = false;
-            StopCoroutine(CoDamagedAnim());
+            StopCoroutine(IDamageAnim);
         }
         if (isIdle)
         {
             isIdle = false;
-            StopCoroutine(CoIdleAnim());
+            StopCoroutine(IIdleAnim);
         }
         if (isJump)
         {
             isJump = false;
-            StopCoroutine(CoJumpAnim());
+            StopCoroutine(IJumpAnim);
         }
         if (isReady)
         {
             isReady = false;
-            StopCoroutine(CoReadyAnim());
+            StopCoroutine(IReadyAnim);
         }
         if (isDash)
         {
             isDash = false;
-            StopCoroutine(CoDashAnim());
+            StopCoroutine(IDashAnim);
         }
         if (isFillGauge)
         {
             isFillGauge = false;
-            StopCoroutine(CoFillHPGauge());
+            StopCoroutine(IFillHpGauge);
         }
         if (isTurn)
         {
             isTurn = false;
-            StopCoroutine(CoLookPlayer());
+            StopCoroutine(ILookAnim);
         }
         if (isFire)
         {
             isFire = false;
-            StopCoroutine(CoIceBallAnim());
-            StopCoroutine(CoIceBreathAnim());
+            StopCoroutine(IIceBallAnim);
+            StopCoroutine(IIceBreathAnim);
         }
 
-        Debug.Log("Stop End");
+        //Debug.Log("Stop End");
         yield break;
     }
     #endregion
@@ -996,8 +1075,15 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
 
             StartCoroutine(StopAnimationCoroutine());
             isDamaged = true;
-            StartCoroutine(CoDamagedAnim());
+            IDamageAnim = CoDamagedAnim();
+            StartCoroutine(IDamageAnim);
             Blank();
+        }
+
+        if (Hp <= 0f)
+        {
+            Debug.Log("Penguin Die");
+            StartCoroutine(CoDieAnim());
         }
 
     }
@@ -1009,7 +1095,8 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         if (!isBlank)
         {
             isBlank = true;
-            StartCoroutine(CoBlank());
+            IBlankAnim = CoBlank();
+            StartCoroutine(IBlankAnim);
         }
     }
 

@@ -670,3 +670,5 @@ MonoBehaviour:
   HPGauge: {fileID: 94202897}
   iceBreathObj: {fileID: 3814484674260135985, guid: 62c8e3d89942fd145a6c4ef879e24894, type: 3}
   iceBallObj: {fileID: 9211452832088618630, guid: 41678ae7bb8069543989ca48ccaab912, type: 3}
+  snowManObj: {fileID: 6310060858031264985, guid: 452e2462e78792f4a83dce3439c38146, type: 3}
+  currDamage: 0

@@ -5490,6 +5490,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 1200141645}
     m_Modifications:
+    - target: {fileID: 4871117891952096392, guid: 315d52552c9428c4aaab061574a7fda4, type: 3}
+      propertyPath: m_SortingOrder
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 4871117892555278470, guid: 315d52552c9428c4aaab061574a7fda4, type: 3}
       propertyPath: m_Name
       value: Door (3)
@@ -9270,6 +9274,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 1200141645}
     m_Modifications:
+    - target: {fileID: 4871117891952096392, guid: 315d52552c9428c4aaab061574a7fda4, type: 3}
+      propertyPath: m_SortingOrder
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 4871117892555278470, guid: 315d52552c9428c4aaab061574a7fda4, type: 3}
       propertyPath: m_Name
       value: Door (2)
@@ -14131,7 +14139,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: a3dba38d84e6f4a44bce47c7a12fb6bf, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -14694,7 +14702,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: d4fd466115df8e14cb6e6a2afc43beb8, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -17195,6 +17203,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 1200141645}
     m_Modifications:
+    - target: {fileID: 4871117891952096392, guid: 315d52552c9428c4aaab061574a7fda4, type: 3}
+      propertyPath: m_SortingOrder
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 4871117892555278470, guid: 315d52552c9428c4aaab061574a7fda4, type: 3}
       propertyPath: m_Name
       value: Door (1)
@@ -22570,9 +22582,9 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 519420031}
     - target: {fileID: 2100725270057653410, guid: 55a5985138d6ae84496aa7b1c1fef6de, type: 3}
-      propertyPath: snowManObj
+      propertyPath: dieEffect
       value: 
-      objectReference: {fileID: 6310060858031264985, guid: 452e2462e78792f4a83dce3439c38146, type: 3}
+      objectReference: {fileID: 6508335864480123700, guid: ebf2747dc54a60e4ea8b061f231c6d07, type: 3}
     - target: {fileID: 2100725270057653415, guid: 55a5985138d6ae84496aa7b1c1fef6de, type: 3}
       propertyPath: m_Name
       value: ChillPenguin
@@ -22670,6 +22682,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 1200141645}
     m_Modifications:
+    - target: {fileID: 4871117891952096392, guid: 315d52552c9428c4aaab061574a7fda4, type: 3}
+      propertyPath: m_SortingOrder
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 4871117892555278470, guid: 315d52552c9428c4aaab061574a7fda4, type: 3}
       propertyPath: m_Name
       value: Door

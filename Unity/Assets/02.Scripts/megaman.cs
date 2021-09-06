@@ -207,7 +207,7 @@ public class megaman : MonoBehaviour, IDamaged
 
     public void Damaged(float damage, Vector3 hitPoint, Vector3 hitNormal)
     {
-        
+        Debug.Log("____PLAYER GET DAMAGED____");
 
     }
 

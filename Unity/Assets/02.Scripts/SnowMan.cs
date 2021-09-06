@@ -4,7 +4,7 @@ using UnityEngine;
 using InterfaceSet;
 
 
-public class SnowMan : MonoBehaviour, IDamaged, IAttack
+public class SnowMan : MonoBehaviour, IDamaged
 {
     public Sprite[] snowManSprites;
     public float _hp { get; private set; }
@@ -19,10 +19,7 @@ public class SnowMan : MonoBehaviour, IDamaged, IAttack
     bool isGround = false;
     float gravitySpeed = 0.98f * 5f;
 
-    public void Attack()
-    {
-
-    }
+    float damage = 10f;
 
     public void Damaged(float damage, Vector3 hitPoint, Vector3 hitNormal)
     {
@@ -31,16 +28,11 @@ public class SnowMan : MonoBehaviour, IDamaged, IAttack
         if (_hp <= 0f)
         {
             // 파편 튀는 이펙트
-
+            GameObject effect = Instantiate(breakEffect, transform.position, Quaternion.identity);
+            Destroy(effect, 0.5f);
 
             Destroy(this.gameObject);
         }
-    }
-
-    private void OnDestroy()
-    {
-        GameObject effect = Instantiate(breakEffect, transform.position, Quaternion.identity);
-        Destroy(effect, 0.5f);
     }
 
     // Start is called before the first frame update
@@ -112,6 +104,16 @@ public class SnowMan : MonoBehaviour, IDamaged, IAttack
         if (collision.CompareTag("PLAYER"))
         {
             Debug.Log("SNOWMAN HIT PLAYER");
+            //Debug.Log("HIT PLAYER ICE BALL");
+            // 충돌한 물체와 현재 물체의 Collider에서 가장 가까운 지점 확인
+            Vector2 cloestPoint = collision.ClosestPoint(gameObject.GetComponent<Collider2D>().bounds.center);
+            // 충돌한 지점의 벡터 설정.
+            // 가까운 지점에서 현 위치를 빼면 방향이 설정된다.
+            Vector2 hitNormal = new Vector2(cloestPoint.x - boxCollider2D.bounds.center.x, cloestPoint.y - boxCollider2D.bounds.center.y).normalized;
+
+            megaman megaman = collision.GetComponent<megaman>();
+            megaman.Damaged(damage, cloestPoint, hitNormal);
+
         }
     }
 

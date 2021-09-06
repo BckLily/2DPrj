@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 6310060858031264984}
   - component: {fileID: 6310060858031264966}
   - component: {fileID: 6310060858031264965}
+  - component: {fileID: -174849510442140557}
   m_Layer: 17
   m_Name: SnowMan
   m_TagString: SNOWMAN
@@ -127,3 +128,24 @@ MonoBehaviour:
   - {fileID: 21300000, guid: d7a085e0d8e316f49ae9ef49426b2ea4, type: 3}
   - {fileID: 21300000, guid: 0b0b1a0348664de4fa67df7002f97dfd, type: 3}
   breakEffect: {fileID: 6508335864480123700, guid: ebf2747dc54a60e4ea8b061f231c6d07, type: 3}
+--- !u!50 &-174849510442140557
+Rigidbody2D:
+  serializedVersion: 4
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6310060858031264985}
+  m_BodyType: 1
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDrag: 0
+  m_AngularDrag: 0.05
+  m_GravityScale: 1
+  m_Material: {fileID: 0}
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 0
+  m_Constraints: 0
