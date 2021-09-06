@@ -5,7 +5,9 @@ using UnityEngine;
 public class Bullet : MonoBehaviour
 {
 
-    public BoxCollider2D boxCollider2D;
+    public CircleCollider2D circleCollider2D;
+
+    float damage = 5f;
 
     // Start is called before the first frame update
     void Start()
@@ -19,16 +21,16 @@ public class Bullet : MonoBehaviour
         transform.Translate(transform.right * Time.deltaTime);
     }
 
-    private void OnTriggerStay2D(Collider2D collision)
+    private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.CompareTag("BOSS"))
         {
             Vector2 cloestPoint = collision.ClosestPoint(gameObject.GetComponent<Collider2D>().bounds.center);
 
-            Vector2 hitNormal = new Vector2(cloestPoint.x - boxCollider2D.bounds.center.x, cloestPoint.y - boxCollider2D.bounds.center.y).normalized;
+            Vector2 hitNormal = new Vector2(cloestPoint.x - circleCollider2D.bounds.center.x, cloestPoint.y - circleCollider2D.bounds.center.y).normalized;
 
             ChillPenguinAI penguin = collision.GetComponent<ChillPenguinAI>();
-            penguin.Damaged(0, cloestPoint, hitNormal);
+            penguin.Damaged(damage, cloestPoint, hitNormal);
         }
 
 

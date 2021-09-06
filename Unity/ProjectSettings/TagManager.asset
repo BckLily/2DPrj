@@ -9,6 +9,8 @@ TagManager:
   - PLAYER
   - BULLET
   - BOSS
+  - ICE
+  - SNOWMAN
   layers:
   - Default
   - TransparentFX
@@ -26,8 +28,8 @@ TagManager:
   - 
   - 
   - BOSS
-  - 
-  - 
+  - ICE
+  - SNOWMAN
   - 
   - 
   - 
