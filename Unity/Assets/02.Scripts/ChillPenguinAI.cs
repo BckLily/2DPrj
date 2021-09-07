@@ -323,6 +323,8 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         // 보스가 처음 등장할 때 동작하는 애니메이션 코루틴
         IStartAnim = CoStartAnim();
         yield return StartCoroutine(IStartAnim);
+        isStageStart = true;
+
 
         while (true)
         {
@@ -646,7 +648,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
                 isFillGauge = false;
 
                 //Debug.Log("Fill Gauge End");
-                isStageStart = true;
+                
                 yield break;
             }
         }
@@ -951,7 +953,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         Destroy(effect, 2f);
         yield return new WaitForSeconds(2f);
 
-        Destroy(this.gameObject);
+        this.gameObject.SetActive(false);
 
         yield break;
     }
@@ -1062,7 +1064,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         // 총알을 맞으면 약간 뒤로 떠서 밀려나는 동작과
         // 5초정도 흰색으로 블링크 하는 동작이 있다.
 
-        if (isDie)
+        if (isDie || isStageStart == false)
         {
             return;
         }
