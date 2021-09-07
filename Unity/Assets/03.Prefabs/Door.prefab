@@ -71,7 +71,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 1
+  m_SortingOrder: 3
   m_Sprite: {fileID: 21300000, guid: bc18b6498b8512949a07410406115970, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -119,9 +119,9 @@ GameObject:
   m_Component:
   - component: {fileID: 4871117892555278471}
   - component: {fileID: 1006534412}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Door
-  m_TagString: Untagged
+  m_TagString: WALL
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -157,6 +157,7 @@ MonoBehaviour:
   DoorSpriteObj: {fileID: 4871117891952096399}
   spriteRenderer: {fileID: 4871117891952096392}
   boxCollider2D: {fileID: 4871117891952096394}
+  doorId: 0
 --- !u!1 &4871117892815564246
 GameObject:
   m_ObjectHideFlags: 0

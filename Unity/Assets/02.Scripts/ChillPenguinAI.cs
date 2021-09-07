@@ -8,6 +8,7 @@ using InterfaceSet;
 //[RequireComponent(typeof(SpriteRenderer))]
 public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
 {
+
     [Header("Component")]
     // Boss의 rb
     public Rigidbody2D rb2d;
@@ -56,6 +57,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     // 원거리 공격 중인지
     bool isFire = false;
 
+    bool isDie = false;
 
     // 특정 횟수마다 Component Reset 실행
     short settingCount = 0;
@@ -946,8 +948,8 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         yield return StartCoroutine(StopAnimationCoroutine());
         SpriteChange(damagedSprites[0]);
         GameObject effect = Instantiate(dieEffect, rectTr.position, Quaternion.identity);
-        Destroy(effect, 3f);
-        yield return new WaitForSeconds(3f);
+        Destroy(effect, 2f);
+        yield return new WaitForSeconds(2f);
 
         Destroy(this.gameObject);
 
@@ -1060,6 +1062,11 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         // 총알을 맞으면 약간 뒤로 떠서 밀려나는 동작과
         // 5초정도 흰색으로 블링크 하는 동작이 있다.
 
+        if (isDie)
+        {
+            return;
+        }
+
         // 체력바 변경하는 동작
         Hp -= damage;
         HPGauge.fillAmount = Hp / maxHp;
@@ -1083,6 +1090,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         if (Hp <= 0f)
         {
             Debug.Log("Penguin Die");
+            isDie = true;
             StartCoroutine(CoDieAnim());
         }
 

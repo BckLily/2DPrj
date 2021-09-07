@@ -5,13 +5,16 @@ using InterfaceSet;
 public class megaman : MonoBehaviour, IDamaged
 {
     // 이동 속도와 점프 강도 변수
-    public float movespeed;
-    public float jumpforce;
+    float movespeed = 5f;
+    float jumpforce = 9.5f;
+    float pressTime;
+    float delay = 1;
+    float movedir;
 
     Rigidbody2D rigid;
     SpriteRenderer spriteRenderer;
     Animator anim;
-
+    CapsuleCollider2D coll2D;
     // 상태 불 변수
     bool isRun = false;
     bool isJump = false;
@@ -21,135 +24,225 @@ public class megaman : MonoBehaviour, IDamaged
     bool isWall = false;
     bool isAttack = false;
 
+    bool flipX = false;
+
+    public GameObject Bulletobj;
     private void Awake()
     {
         rigid = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         anim = GetComponent<Animator>();
+        coll2D = GetComponent<CapsuleCollider2D>();
     }
     private void Start()
     {
         anim.SetBool("IsSpawn", isSpawn);
+        // 첫발은 입력값과 동시에 발사됨
+        pressTime = delay;
+        movedir = 0f;
     }
     private void Update()
     {
+        NowGround();
         //플레이어 이동
         Playermove();
         //플레이어 점프
-        Playerjump();
+        PlayerJump();
         //플레이어 대쉬
         PlayerDash();
         //플레이어 공격
-        PlayerIdleAttack();
+        PlayerAttack();
         //플레이어 벽점프
         //Walljumping(1.5f);
     }
 
     void Playermove()
     {
-        float movedir = Input.GetAxisRaw("Horizontal");
+        movedir = Input.GetAxisRaw("Horizontal");
 
         // 절대값으로 movedir 값을 받아서 달리기 애미매이션 발동
         if (Mathf.Abs(movedir) >= 0.01f)
         {
             isRun = true;
             anim.SetBool("IsRun", isRun);
+            anim.SetBool("IsGround", isGround);
         }
         else
         {
             isRun = false;
             anim.SetBool("IsRun", isRun);
+            anim.SetBool("IsGround", isGround);
         }
         // movrdir 값에 따른 플레이어 이동속도
         rigid.velocity = new Vector2(movespeed * movedir, rigid.velocity.y);
 
         // 왼쪽 오른쪽 방향 전환
         if (movedir == 1)
-            spriteRenderer.flipX = false;
+        {
+            flipX = false;
+            spriteRenderer.flipX = flipX;
+        }
         else if (movedir == -1)
-            spriteRenderer.flipX = true;
+        {
+            flipX = true;
+            spriteRenderer.flipX = flipX;
+        }
 
         // 정지시 플레이어 이동 감속
         if (Input.GetButtonUp("Horizontal"))
             rigid.velocity = new Vector2(rigid.velocity.normalized.x * 0.5f, rigid.velocity.y);
     }
-    void Playerjump()
-    {
-        if (Input.GetButtonDown("Jump") && isGround)
-        {
-            isJump = true;
-            isGround = false;
-            rigid.AddForce(Vector2.up * jumpforce, ForceMode2D.Impulse);
-            anim.SetBool("IsJump", isJump);
-        }
-    }
     void PlayerDash()
     {
-        float movedir = Input.GetAxisRaw("Horizontal");
+        movedir = Input.GetAxisRaw("Horizontal");
 
         if (Input.GetKeyDown(KeyCode.LeftShift) && !isDash && isGround)
         {
             anim.SetTrigger("IsDash");
+            anim.SetBool("IsGround", isGround);
             // 무한 대쉬 방지 코루틴 함수 실행
             StartCoroutine(CoDash());
             rigid.velocity = new Vector2(movespeed * movedir, rigid.velocity.y);
         }
     }
-    void PlayerIdleAttack()
+    void PlayerAttack()
     {
-        if (Input.GetKeyDown(KeyCode.K))
-        {
-            StartCoroutine(CoAttack());
-        }
-    }
-    void PlayerRunAttack()
-    {
-        if (isRun == true && isAttack == true)
-        {
-            StartCoroutine(CoAttack());
-        }
-    }
-    void PlayerJumpAttack()
-    {
-        if (isJump == true && isAttack == true)
-        {
-            StartCoroutine(CoAttack());
-        }
-    }
-    void playerDashAttack()
-    {
-        if(isDash == true && isAttack ==true)
-        {
-            StartCoroutine(CoAttack());
-        }
-    }
-    void Walljumping(float moveDir)
-    {
-        CapsuleCollider2D coll2D = GetComponent<CapsuleCollider2D>();
-        Debug.Log(coll2D.size);
-        RaycastHit2D hit = Physics2D.Raycast(coll2D.bounds.center, new Vector2(moveDir, 0),
-                                             Mathf.Abs(moveDir * ((coll2D.bounds.size.x / 2) + 0.05f)),
-                                             1 << LayerMask.NameToLayer("WALL"));
 
-        if (hit)
+        if (Input.GetKey(KeyCode.K)) // K = 공격키
         {
-            Debug.Log("WALL_HIT");
-            isWall = true;
-            isJump = true;
-            isGround = false;
-            anim.SetBool("IsWall", isWall);
-            if (Input.GetButtonDown("Jump"))
+            pressTime += Time.deltaTime;
+            if ((pressTime >= delay))
             {
-                isJump = true;
-                isGround = false;
-                rigid.AddForce(Vector2.up * jumpforce * 0.75f, ForceMode2D.Impulse);
-                anim.SetBool("IsJump", isJump);
+                // delay초 마다 발사
+                pressTime -= delay;
+                // 플레이어 위치에서 총알 생성
+                GameObject bullet = Instantiate(Bulletobj, this.transform.position, Quaternion.identity);
+                if (flipX == true)
+                {
+                    bullet.GetComponent<Bullet>().dir = Vector2.left;
+                    if (isWall == true)
+                    {
+                        bullet.GetComponent<Bullet>().dir = Vector2.right;
+                    }
+                }
+                else
+                {
+                    bullet.GetComponent<Bullet>().dir = Vector2.right;
+                    if (isWall == true)
+                    {
+                        bullet.GetComponent<Bullet>().dir = Vector2.left;
+                    }
+                }
             }
-            if (!isRun)
+            StartCoroutine(CoAttack());
+        }
+        if (Input.GetKeyUp(KeyCode.K))
+        {
+            // 공격 연타 가능
+            pressTime = delay;
+        }
+    }
+    void PlayerJump()
+    {
+        // x 축으로 1.5f 만큼의 레이캐스트를 쏴서 벽을 인지한다.
+        RaycastHit2D hit = Physics2D.Raycast(coll2D.bounds.center, new Vector2(1f, 0) * movedir,
+                                             Mathf.Abs(1.5f * ((coll2D.bounds.size.x / 2) + 0.01f)),
+                                             1 << LayerMask.NameToLayer("WALL"));
+        //Debug.DrawRay(coll2D.bounds.center,new Vector2(1.5f, 0),Color.red, ((coll2D.bounds.size.y / 2) + 0.05f));
+        // 땅에서 점프키를 누를 때
+        if (Input.GetButtonDown("Jump"))
+        {
+            // 레이케스트로 벽인 인지 했을 때
+            if (isWall == true && isGround == false)
             {
+                Debug.Log("WALL HIT");
+                if (isWall == true)
+                {
+                    rigid.AddForce(new Vector2(-movedir * 3f, transform.up.y) * jumpforce, ForceMode2D.Impulse);
+                }
                 isWall = false;
+                isJump = true;
+                // 벽에 붙은 상태로 점프를 했을 때
+                // 벽에 붙어서 방향키로 이동 안 했을때 (방향키 손 땠을때)
+                if (isRun == false && isGround == true)
+                {
+                    isWall = false;
+                }
+                anim.SetBool("IsJump", isJump);
                 anim.SetBool("IsWall", isWall);
             }
+            else if (isWall == false && isGround == true)
+            {
+                Debug.Log("WALL NOT HIT");
+                isJump = true;
+                rigid.AddForce(Vector2.up * jumpforce, ForceMode2D.Impulse);
+            }
+            anim.SetBool("IsWall", isWall);
+            anim.SetBool("IsJump", isJump);
+        }
+
+    }
+
+    //void Playerjump()
+    //{
+    //    if (Input.GetButtonDown("Jump") && isGround)
+    //    {
+    //        isJump = true;
+    //        //isGround = false;
+    //        rigid.AddForce(Vector2.up * jumpforce, ForceMode2D.Impulse);
+    //        anim.SetBool("IsJump", isJump);
+    //        //anim.SetBool("IsGround", isGround);
+    //    }
+    //}
+    //void Walljumping(float moveDir)
+    //{
+    //    RaycastHit2D hit = Physics2D.Raycast(coll2D.bounds.center, new Vector2(moveDir, 0),
+    //                                         Mathf.Abs(moveDir * ((coll2D.bounds.size.x / 2) + 0.01f)),
+    //                                         1 << LayerMask.NameToLayer("WALL"));
+    //    //Debug.Log(coll2D.size);
+    //    if (hit)
+    //    {
+    //        Debug.Log("WALL HIT");
+    //        isWall = true;
+    //        isJump = true;
+    //        anim.SetBool("IsWall", isWall);
+    //        if (Input.GetButtonDown("Jump"))
+    //        {
+    //            isJump = true;
+    //            rigid.AddForce(Vector2.up * jumpforce * 0.75f, ForceMode2D.Impulse);
+    //            anim.SetBool("IsJump", isJump);
+    //        }
+    //        if (!isRun)
+    //        {
+    //            isWall = false;
+    //            anim.SetBool("IsWall", isWall);
+    //        }
+    //    }
+    //    else
+    //    {
+    //        isWall = false;
+    //        anim.SetBool("IsWall", isWall);
+    //    }
+
+    //}
+
+    void NowGround()
+    {
+        Debug.DrawRay(coll2D.bounds.center, Vector2.down, Color.red, ((coll2D.bounds.size.y / 2) + 0.075f));
+
+        if (Physics2D.Raycast(coll2D.bounds.center, Vector2.down, ((coll2D.bounds.size.y / 2) + 0.075f), 1 << LayerMask.NameToLayer("FLOOR")))
+        {
+            isGround = true;
+            anim.SetBool("IsGround", isGround);
+            isWall = false;
+            anim.SetBool("IsWall", isWall);
+            //Debug.Log("Is Ground: " + isGround);
+        }
+        else
+        {
+            isGround = false;
+            anim.SetBool("IsGround", isGround);
+            //Debug.Log("Is Ground: " + isGround);
         }
     }
 
@@ -161,7 +254,8 @@ public class megaman : MonoBehaviour, IDamaged
             isJump = false;
             isWall = false;
             anim.SetBool("IsJump", isJump);
-
+            anim.SetBool("IsGround", isGround);
+            anim.SetBool("IsWall", isWall);
         }
         if (collision.gameObject.tag.Equals("WALL"))
         {
@@ -170,6 +264,24 @@ public class megaman : MonoBehaviour, IDamaged
             isWall = true;
             anim.SetBool("IsJump", isJump);
             anim.SetBool("IsWall", isWall);
+            anim.SetBool("IsGround", isGround);
+        }
+    }
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("WALL"))
+        {
+            if (Mathf.Abs(movedir) > 0)
+            {
+                isWall = true;
+                anim.SetBool("IsWall", isWall);
+            }
+            else
+            {
+                isWall = false;
+                anim.SetBool("IsWall", isWall);
+            }
         }
     }
 
@@ -178,8 +290,11 @@ public class megaman : MonoBehaviour, IDamaged
         if (collision.gameObject.tag.Equals("WALL"))
         {
             isWall = false;
+            anim.SetBool("IsWall", isWall);
         }
     }
+
+
     // 무한 대쉬 방지용 코루틴 함수
     IEnumerator CoDash()
     {
@@ -207,9 +322,7 @@ public class megaman : MonoBehaviour, IDamaged
 
     public void Damaged(float damage, Vector3 hitPoint, Vector3 hitNormal)
     {
-        Debug.Log("____PLAYER GET DAMAGED____");
+
 
     }
-
-
 }
