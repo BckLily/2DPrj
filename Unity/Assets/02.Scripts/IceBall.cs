@@ -58,13 +58,15 @@ public class IceBall : MonoBehaviour
             SnowMan snowMan = collision.GetComponent<SnowMan>();
             snowMan.Damaged(damage, Vector3.zero, Vector3.zero);
 
+
+            Vector2 cloestPoint = collision.ClosestPoint(gameObject.GetComponent<Collider2D>().bounds.center);
+            Vector2 hitNormal = new Vector2(cloestPoint.x - boxCollider2D.bounds.center.x, cloestPoint.y - boxCollider2D.bounds.center.y).normalized;
+
+            GameObject effect = Instantiate(breakEffect, transform.position, Quaternion.Euler(hitNormal));
+            Destroy(effect, 0.5f);
+
             Destroy(this.gameObject);
         }
     }
 
-    private void OnDestroy()
-    {
-        GameObject effect = Instantiate(breakEffect, transform.position, Quaternion.identity);
-        Destroy(effect, 0.5f);
-    }
 }

@@ -129,7 +129,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
 
 
     [Header("Health")]
-    private float maxHp = 100f;
+    private float maxHp = 300f;
     [SerializeField]
     // Boss의 HP
     private float _hp;
@@ -262,6 +262,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
 
         }
 
+        
     }
 
 
@@ -328,6 +329,9 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
 
         while (true)
         {
+            //Debug.Log("____BOSS PATTERN____");
+
+
             // 플레이어의 위치를 쳐다보는 코루틴
             ILookAnim = CoLookPlayer();
             yield return StartCoroutine(ILookAnim);
@@ -429,6 +433,8 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
             // 떨어져있음.
             isGround = false;
         }
+
+        //Debug.Log("____Is Ground____: " + isGround);
     }
 
 
@@ -506,16 +512,20 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
             {
                 // 대쉬 방향을 반대로 해준다.
                 currSpeed *= -1f;
+                // 스프라이트의 방향을 뒤집어 준다.
+                flipX = !flipX;
             }
             // 점프 중이면
             else if (isJump)
             {
                 // 점프 방향을 반대로 해준다.
                 jumpHorizontalSpeed *= -1f;
+                // 스프라이트의 방향을 뒤집어 준다.
+                flipX = !flipX;
             }
 
-            // 스프라이트의 방향을 뒤집어 준다.
-            flipX = !flipX;
+
+
             //Debug.Log("____Reflect____");
             //Debug.Log(rb2d.velocity);
             //Vector2 vector = new Vector2(rb2d.velocity.x * -1, rb2d.velocity.y);
@@ -528,7 +538,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         else if (collision.CompareTag("PLAYER"))
         {
             //Debug.Log("TRIGGER PLAYER");
-            
+
             // 가장 가까운 포인트
             Vector2 cloestPoint = collision.ClosestPoint(polyCollider2D.bounds.center);
             // 가까운 포인트의 노멀 벡터
@@ -546,6 +556,8 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
             // 맞은 포인트와 벡터 펭귄에게 맞으면 바로 파괴되므로 필요 없다.
             snowMan.Damaged(currDamage, Vector3.zero, Vector3.zero);
         }
+
+
     }
 
 
@@ -648,7 +660,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
                 isFillGauge = false;
 
                 //Debug.Log("Fill Gauge End");
-                
+
                 yield break;
             }
         }
@@ -727,31 +739,6 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
                 yield break;
             }
         }
-    }
-    #endregion
-
-
-    #region Damaged Animation Coroutine
-    // 공격 받았을 때의 애니메이션
-    IEnumerator CoDamagedAnim()
-    {
-        //Debug.Log("Damage Anim");
-
-        //while (isDamaged)
-        //{
-        SpriteChange(damagedSprites[0]);
-        //sprite = damagedSprites[0];
-        yield return new WaitForSeconds(0.3f);
-
-        if (isGround)
-        {
-            isDamaged = false;
-
-            //Debug.Log("Damage End");
-
-            yield break;
-        }
-        //}
     }
     #endregion
 
@@ -943,6 +930,36 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
     }
     #endregion
 
+
+    #region Damaged Animation Coroutine
+    // 공격 받았을 때의 애니메이션
+    IEnumerator CoDamagedAnim()
+    {
+        Debug.Log("Damage Anim");
+        //yield return StartCoroutine(StopAnimationCoroutine());
+
+        while (isDamaged)
+        {
+            SpriteChange(damagedSprites[0]);
+            //sprite = damagedSprites[0];
+            yield return new WaitForSeconds(0.3f);
+
+            if (isGround)
+            {
+                isDamaged = false;
+
+                Debug.Log("Damage End");
+
+                //yield return StartCoroutine(StopAnimationCoroutine());
+                yield break;
+            }
+
+            Debug.Log("Damage In");
+        }
+    }
+    #endregion
+
+
     #region Chill Penguin Die Animation Coroutine
     IEnumerator CoDieAnim()
     {
@@ -969,11 +986,8 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
             rb2d.velocity = Vector2.zero;
             // 중력 값을 0으로 변경
             rb2d.gravityScale = 0f;
-
             // Kinematic 상태로 bodyType 변경
             rb2d.bodyType = RigidbodyType2D.Kinematic;
-
-
             // Trigger 상태로 변경
             polyCollider2D.isTrigger = true;
         }
@@ -981,10 +995,8 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         {
             // Trigger 상태를 끔
             polyCollider2D.isTrigger = false;
-
             // Dynamic 상태로 bodyType 변경
             rb2d.bodyType = RigidbodyType2D.Dynamic;
-
             // 중력 값을 1.5로 변경
             rb2d.gravityScale = 1.5f;
 
@@ -1002,47 +1014,57 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         {
             isFall = false;
             StopCoroutine(IFallAnim);
+            IFallAnim = null;
         }
         if (isDamaged)
         {
             isDamaged = false;
             StopCoroutine(IDamageAnim);
+            IDamageAnim = null;
         }
         if (isIdle)
         {
             isIdle = false;
             StopCoroutine(IIdleAnim);
+            IIdleAnim = null;
         }
         if (isJump)
         {
             isJump = false;
             StopCoroutine(IJumpAnim);
+            IJumpAnim = null;
         }
         if (isReady)
         {
             isReady = false;
             StopCoroutine(IReadyAnim);
+            IReadyAnim = null;
         }
         if (isDash)
         {
             isDash = false;
             StopCoroutine(IDashAnim);
+            IDashAnim = null;
         }
         if (isFillGauge)
         {
             isFillGauge = false;
             StopCoroutine(IFillHpGauge);
+            IFillHpGauge = null;
         }
         if (isTurn)
         {
             isTurn = false;
             StopCoroutine(ILookAnim);
+            ILookAnim = null;
         }
         if (isFire)
         {
             isFire = false;
             StopCoroutine(IIceBallAnim);
+            IIceBallAnim = null;
             StopCoroutine(IIceBreathAnim);
+            IIceBreathAnim = null;
         }
 
         //Debug.Log("Stop End");
@@ -1074,7 +1096,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
         HPGauge.fillAmount = Hp / maxHp;
 
         // 
-        if (!isDamaged && isAttack == false)
+        if (!isDamaged && isAttack == false && isBlank == false)
         {
             // 힘을 받는 방향으로 밀친다.
             // 공격 중이거나 피해를 받아서 이미 깜빡이고 있는 경우 이 동작을 다시 수행하지 않는다.
@@ -1082,7 +1104,7 @@ public class ChillPenguinAI : MonoBehaviour, IAttack, IDamaged
 
             //Debug.Log("Vector: " + new Vector2(hitNormal.x, hitNormal.x * Mathf.Tan(45 * Mathf.Deg2Rad)));
 
-            StartCoroutine(StopAnimationCoroutine());
+
             isDamaged = true;
             IDamageAnim = CoDamagedAnim();
             StartCoroutine(IDamageAnim);

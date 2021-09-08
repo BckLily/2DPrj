@@ -39,7 +39,7 @@ public class IceBreath : MonoBehaviour
     {
         if (collision.CompareTag("PLAYER"))
         {
-            Debug.Log("HIT PLAYER: ICE BREATH");
+            //Debug.Log("HIT PLAYER: ICE BREATH");
 
             Vector2 cloestPoint = collision.ClosestPoint(gameObject.GetComponent<BoxCollider2D>().bounds.center);
 
