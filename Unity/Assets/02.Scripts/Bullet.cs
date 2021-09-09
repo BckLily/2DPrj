@@ -11,7 +11,7 @@ public class Bullet : MonoBehaviour
 
     public CircleCollider2D circleCollider2D;
     float damage = 5f;
-    
+
     void Start()
     {
         Destroy(this.gameObject, 1f);
@@ -20,6 +20,14 @@ public class Bullet : MonoBehaviour
     void Update()
     {
         transform.Translate(new Vector3(dir.x, dir.y, 0f) * fireSpeed * Time.deltaTime);
+        if (dir == Vector2.right)
+        {
+            this.GetComponent<SpriteRenderer>().flipX = false;
+        }
+        else if(dir ==  Vector2.left)
+        {
+            this.GetComponent<SpriteRenderer>().flipX = true;
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -37,6 +45,12 @@ public class Bullet : MonoBehaviour
         }
         if (collision.CompareTag("WALL") || collision.CompareTag("FLOOR"))
         {
+            Debug.Log("BULLET WALL HIT");
+            Destroy(this.gameObject);
+        }
+        if (collision.CompareTag("SNOWMAN"))
+        {
+            Debug.Log("SNOWMAN HIT");
             Destroy(this.gameObject);
         }
 

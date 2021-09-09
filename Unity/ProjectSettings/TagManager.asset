@@ -11,6 +11,8 @@ TagManager:
   - BOSS
   - ICE
   - SNOWMAN
+  - ENEMY
+  - ENEMY_BULLET
   layers:
   - Default
   - TransparentFX
@@ -30,7 +32,7 @@ TagManager:
   - BOSS
   - ICE
   - SNOWMAN
-  - 
+  - ENEMY
   - 
   - 
   - 

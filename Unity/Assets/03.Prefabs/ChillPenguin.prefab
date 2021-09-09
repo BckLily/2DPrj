@@ -672,4 +672,4 @@ MonoBehaviour:
   iceBallObj: {fileID: 9211452832088618630, guid: 41678ae7bb8069543989ca48ccaab912, type: 3}
   snowManObj: {fileID: 6310060858031264985, guid: 452e2462e78792f4a83dce3439c38146, type: 3}
   currDamage: 0
-  dieEffect: {fileID: 6508335864480123700, guid: ebf2747dc54a60e4ea8b061f231c6d07, type: 3}
+  dieEffect: {fileID: 2942449452049036147, guid: 29c97af8f09a1b345bf1915e5ca66d13, type: 3}

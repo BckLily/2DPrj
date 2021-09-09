@@ -8,8 +8,9 @@ public class megaman : MonoBehaviour, IDamaged
     float movespeed = 5f;
     float jumpforce = 9.5f;
     float pressTime;
-    float delay = 1;
+    float delay = 0f;
     float movedir;
+    float damage = 10;
 
     Rigidbody2D rigid;
     SpriteRenderer spriteRenderer;
@@ -23,10 +24,14 @@ public class megaman : MonoBehaviour, IDamaged
     bool isSpawn = true;
     bool isWall = false;
     bool isAttack = false;
+    bool isDamaged = false;
+
 
     bool flipX = false;
 
     public GameObject Bulletobj;
+    public GameObject BigBulletobj;
+    GameObject Currbullet;
     private void Awake()
     {
         rigid = GetComponent<Rigidbody2D>();
@@ -41,19 +46,26 @@ public class megaman : MonoBehaviour, IDamaged
         pressTime = delay;
         movedir = 0f;
     }
+    public void Damaged(float damage, Vector3 hitPoint, Vector3 hitNormal)
+    {
+
+        isDamaged = true;
+        anim.SetBool("IsDamaged", isDamaged);
+        new WaitForSeconds(1f);
+        isDamaged = false;
+        anim.SetBool("IsDamaged", isDamaged);
+    }
     private void Update()
     {
         NowGround();
         //플레이어 이동
         Playermove();
-        //플레이어 점프
+        //플레이어 점프 & 벽점프
         PlayerJump();
         //플레이어 대쉬
         PlayerDash();
         //플레이어 공격
         PlayerAttack();
-        //플레이어 벽점프
-        //Walljumping(1.5f);
     }
 
     void Playermove()
@@ -107,38 +119,50 @@ public class megaman : MonoBehaviour, IDamaged
     }
     void PlayerAttack()
     {
-
-        if (Input.GetKey(KeyCode.K)) // K = 공격키
+        // 공격키 K
+        if (Input.GetKey(KeyCode.K))
         {
+            // 공격키를 누른 시간 체크
             pressTime += Time.deltaTime;
-            if ((pressTime >= delay))
+            // 누른시간이 3초 이상
+            if (pressTime > 1.5f)
             {
-                // delay초 마다 발사
-                pressTime -= delay;
-                // 플레이어 위치에서 총알 생성
-                GameObject bullet = Instantiate(Bulletobj, this.transform.position, Quaternion.identity);
-                if (flipX == true)
-                {
-                    bullet.GetComponent<Bullet>().dir = Vector2.left;
-                    if (isWall == true)
-                    {
-                        bullet.GetComponent<Bullet>().dir = Vector2.right;
-                    }
-                }
-                else
+                // 현재 생성되는 총알을 차징샷으로 변경
+                Currbullet = BigBulletobj;
+                this.transform.Find("ChargingAura").gameObject.SetActive(true);
+            }
+            // 누른시간이 3초 미만일시
+            else
+            {
+                // 현재 생성되는 총알을 기본으로
+                Currbullet = Bulletobj;
+            }
+        }
+        // 공격키에 손을 떘을 때 총알이 발사
+        if (Input.GetKeyUp(KeyCode.K))
+        {
+            this.transform.Find("ChargingAura").gameObject.SetActive(false);
+            // 현재 총알의 상태에 따라 총알이 생성됨
+            GameObject bullet = Instantiate(Currbullet, this.transform.position, Quaternion.identity);
+            //플레이어 방향과 벽에 붙어있는지 여부에 따른 총알 발사 방향 조정
+            if (flipX == true)
+            {
+                bullet.GetComponent<Bullet>().dir = Vector2.left;
+                if (isWall == true)
                 {
                     bullet.GetComponent<Bullet>().dir = Vector2.right;
-                    if (isWall == true)
-                    {
-                        bullet.GetComponent<Bullet>().dir = Vector2.left;
-                    }
+                }
+            }
+            else
+            {
+                bullet.GetComponent<Bullet>().dir = Vector2.right;
+                if (isWall == true)
+                {
+                    bullet.GetComponent<Bullet>().dir = Vector2.left;
                 }
             }
             StartCoroutine(CoAttack());
-        }
-        if (Input.GetKeyUp(KeyCode.K))
-        {
-            // 공격 연타 가능
+            // 연속 공격이 가능하게끔 누른시간 초기화
             pressTime = delay;
         }
     }
@@ -183,49 +207,6 @@ public class megaman : MonoBehaviour, IDamaged
 
     }
 
-    //void Playerjump()
-    //{
-    //    if (Input.GetButtonDown("Jump") && isGround)
-    //    {
-    //        isJump = true;
-    //        //isGround = false;
-    //        rigid.AddForce(Vector2.up * jumpforce, ForceMode2D.Impulse);
-    //        anim.SetBool("IsJump", isJump);
-    //        //anim.SetBool("IsGround", isGround);
-    //    }
-    //}
-    //void Walljumping(float moveDir)
-    //{
-    //    RaycastHit2D hit = Physics2D.Raycast(coll2D.bounds.center, new Vector2(moveDir, 0),
-    //                                         Mathf.Abs(moveDir * ((coll2D.bounds.size.x / 2) + 0.01f)),
-    //                                         1 << LayerMask.NameToLayer("WALL"));
-    //    //Debug.Log(coll2D.size);
-    //    if (hit)
-    //    {
-    //        Debug.Log("WALL HIT");
-    //        isWall = true;
-    //        isJump = true;
-    //        anim.SetBool("IsWall", isWall);
-    //        if (Input.GetButtonDown("Jump"))
-    //        {
-    //            isJump = true;
-    //            rigid.AddForce(Vector2.up * jumpforce * 0.75f, ForceMode2D.Impulse);
-    //            anim.SetBool("IsJump", isJump);
-    //        }
-    //        if (!isRun)
-    //        {
-    //            isWall = false;
-    //            anim.SetBool("IsWall", isWall);
-    //        }
-    //    }
-    //    else
-    //    {
-    //        isWall = false;
-    //        anim.SetBool("IsWall", isWall);
-    //    }
-
-    //}
-
     void NowGround()
     {
         Debug.DrawRay(coll2D.bounds.center, Vector2.down, Color.red, ((coll2D.bounds.size.y / 2) + 0.075f));
@@ -266,6 +247,11 @@ public class megaman : MonoBehaviour, IDamaged
             anim.SetBool("IsWall", isWall);
             anim.SetBool("IsGround", isGround);
         }
+        if (collision.gameObject.CompareTag("BOSS"))
+        {
+            
+        }
+
     }
 
     private void OnCollisionStay2D(Collision2D collision)
@@ -320,9 +306,4 @@ public class megaman : MonoBehaviour, IDamaged
         yield break;
     }
 
-    public void Damaged(float damage, Vector3 hitPoint, Vector3 hitNormal)
-    {
-
-
-    }
 }
